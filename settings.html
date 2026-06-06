@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Journal Settings</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <h1>Settings</h1>
+        <nav>
+          <a href="index.html">Entries</a>
+          <a href="settings.html" class="active">Settings</a>
+        </nav>
+      </header>
+
+      <main>
+        <div class="settings-header">
+          <h2>Templates</h2>
+          <button id="addTemplateBtn" class="btn-primary">
+            + Add Template
+          </button>
+        </div>
+        <div id="templatesList" class="templates-list">
+          <!-- Templates will be rendered here -->
+        </div>
+
+        <hr />
+
+        <div class="danger-zone">
+          <h3>Danger Zone</h3>
+          <button id="clearAllDataBtn" class="btn-danger">
+            Delete All Journal Entries
+          </button>
+        </div>
+      </main>
+    </div>
+
+    <!-- Modal for template editor -->
+    <div id="templateModal" class="modal">
+      <div class="modal-content">
+        <span class="close">&times;</span>
+        <h2 id="templateModalTitle">Add Template</h2>
+        <form id="templateForm">
+          <div class="form-group">
+            <label for="templateName">Template Name</label>
+            <input
+              type="text"
+              id="templateName"
+              required
+              placeholder="e.g., Forex Trade, Daily Reflection"
+            />
+          </div>
+          <div id="fieldsList">
+            <h4>Fields</h4>
+            <div id="fieldsContainer">
+              <!-- Dynamic field inputs go here -->
+            </div>
+            <button type="button" id="addFieldBtn" class="btn-secondary">
+              + Add Field
+            </button>
+          </div>
+          <button type="submit" class="btn-primary">Save Template</button>
+        </form>
+      </div>
+    </div>
+
+    <script src="script.js"></script>
+  </body>
+</html>
