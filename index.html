@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Journal</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <h1>Journal</h1>
+        <nav>
+          <a href="index.html" class="active">Entries</a>
+          <a href="settings.html">Settings</a>
+        </nav>
+      </header>
+
+      <main>
+        <div class="new-entry-section">
+          <button id="newEntryBtn" class="btn-primary">+ New Entry</button>
+        </div>
+
+        <div id="entriesList" class="entries-list">
+          <!-- Entries will be rendered here -->
+        </div>
+      </main>
+    </div>
+
+    <!-- Modal for new/edit entry -->
+    <div id="entryModal" class="modal">
+      <div class="modal-content">
+        <span class="close">&times;</span>
+        <h2 id="modalTitle">New Entry</h2>
+        <form id="entryForm">
+          <div class="form-group">
+            <label for="templateSelect">Template</label>
+            <select id="templateSelect" required>
+              <option value="">-- Select a template --</option>
+            </select>
+          </div>
+          <div id="dynamicFields"></div>
+          <div class="form-group">
+            <label for="journalText">Journal / Notes</label>
+            <textarea
+              id="journalText"
+              rows="6"
+              placeholder="Write your thoughts, rationale, or any notes here..."
+            ></textarea>
+          </div>
+          <button type="submit" class="btn-primary">Save Entry</button>
+        </form>
+      </div>
+    </div>
+
+    <script src="script.js"></script>
+  </body>
+</html>
