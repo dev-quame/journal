@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Journal</title>
-    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="style.css" />
   </head>
   <body>
     <div class="container">
@@ -17,17 +17,65 @@
       </header>
 
       <main>
-        <div class="new-entry-section">
+        <!-- Action bar: Quick Entry + New Entry -->
+        <div class="action-bar">
+          <button id="quickEntryBtn" class="btn-quick">⚡ Quick Entry</button>
           <button id="newEntryBtn" class="btn-primary">+ New Entry</button>
         </div>
 
+        <!-- Search & Filters bar -->
+        <div class="filters-bar">
+          <div class="search-group">
+            <input
+              type="text"
+              id="searchInput"
+              placeholder="Search entries..."
+              class="search-input"
+            />
+          </div>
+
+          <div class="filter-group">
+            <select id="templateFilter" class="filter-select">
+              <option value="all">All templates</option>
+            </select>
+
+            <select id="dateFilter" class="filter-select">
+              <option value="all">All time</option>
+              <option value="7days">Last 7 days</option>
+              <option value="30days">Last 30 days</option>
+              <option value="this-month">This month</option>
+              <option value="custom">Custom range</option>
+            </select>
+          </div>
+
+          <div
+            id="customDateRange"
+            class="custom-date-range"
+            style="display: none"
+          >
+            <input type="date" id="startDate" />
+            <span>to</span>
+            <input type="date" id="endDate" />
+            <button id="applyDateRange" class="btn-secondary-sm">Apply</button>
+          </div>
+        </div>
+
+        <!-- Entries container -->
         <div id="entriesList" class="entries-list">
           <!-- Entries will be rendered here -->
+        </div>
+
+        <!-- Empty state (shown via JS if no entries match filters) -->
+        <div id="emptyState" class="empty-state" style="display: none">
+          <p>No entries found.</p>
+          <button id="clearFiltersBtn" class="btn-secondary">
+            Clear filters
+          </button>
         </div>
       </main>
     </div>
 
-    <!-- Modal for new/edit entry -->
+    <!-- Modal for new/edit entry (full) -->
     <div id="entryModal" class="modal">
       <div class="modal-content">
         <span class="close">&times;</span>
@@ -49,6 +97,38 @@
             ></textarea>
           </div>
           <button type="submit" class="btn-primary">Save Entry</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Modal for Quick Entry (compact) -->
+    <div id="quickEntryModal" class="modal">
+      <div class="modal-content modal-compact">
+        <span class="close">&times;</span>
+        <h2>Quick Entry</h2>
+        <p class="quick-template-info" id="quickTemplateInfo">
+          Using template: <span id="quickTemplateName"></span>
+        </p>
+        <form id="quickEntryForm">
+          <div id="quickDynamicFields"></div>
+          <div class="form-group">
+            <label for="quickJournalText">Quick notes</label>
+            <textarea
+              id="quickJournalText"
+              rows="4"
+              placeholder="Add a quick note..."
+            ></textarea>
+          </div>
+          <div class="quick-actions">
+            <button type="submit" class="btn-primary">Save</button>
+            <button
+              type="button"
+              id="quickEntryFullEditBtn"
+              class="btn-secondary"
+            >
+              Edit full entry instead
+            </button>
+          </div>
         </form>
       </div>
     </div>
