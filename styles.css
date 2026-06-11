@@ -107,12 +107,6 @@ nav a.active {
   padding: 0.6rem 1.2rem;
   border-radius: 6px;
   cursor: pointer;
-  background: #d32f2f;
-  color: white;
-}
-
-.btn-danger:hover {
-  background: #b71c1c;
 }
 
 /* Action Bar */
@@ -608,7 +602,7 @@ hr {
 }
 
 /* ============================================
-   THEMES
+   THEMES — FULLY CONSISTENT
    ============================================ */
 
 /* Theme 1: Light (default) */
@@ -647,7 +641,15 @@ body[data-theme="light"] .btn-secondary-sm {
   color: #1e1e1e;
 }
 
-body[data-theme="light"] .filters-bar {
+body[data-theme="light"] .btn-danger {
+  background: #d32f2f;
+  color: white;
+}
+
+body[data-theme="light"] .filters-bar,
+body[data-theme="light"] .entry-card,
+body[data-theme="light"] .modal-content,
+body[data-theme="light"] .template-card {
   background: white;
   border-color: #e1dfdd;
 }
@@ -659,27 +661,20 @@ body[data-theme="light"] .form-group input,
 body[data-theme="light"] .form-group select,
 body[data-theme="light"] .form-group textarea,
 body[data-theme="light"] .theme-selector select {
-  border-color: #ccc;
   background: white;
+  border-color: #ccc;
+  color: #1e1e1e;
 }
 
 body[data-theme="light"] .backup-banner {
   background: #fff3e0;
-  border: 1px solid #ffd699;
+  border-color: #ffd699;
+  color: #1e1e1e;
 }
 
 body[data-theme="light"] .tour-hint {
   background: #1e1e1e;
   color: white;
-}
-
-body[data-theme="light"] .entry-card {
-  background: white;
-  border-color: #e1dfdd;
-}
-
-body[data-theme="light"] .entry-card.pinned {
-  border-left-color: #f5a623;
 }
 
 body[data-theme="light"] .entry-template {
@@ -694,26 +689,19 @@ body[data-theme="light"] .entry-preview {
 
 body[data-theme="light"] .entry-fields {
   background: #f6f5f4;
-}
-
-body[data-theme="light"] .modal-content {
-  background: white;
+  color: #1e1e1e;
 }
 
 body[data-theme="light"] .close {
   color: #616161;
 }
 
-body[data-theme="light"] .template-card,
 body[data-theme="light"] .field-item {
-  background: white;
+  background: #f6f5f4;
   border-color: #e1dfdd;
 }
 
-body[data-theme="light"] .danger-zone {
-  border-top-color: #e1dfdd;
-}
-
+body[data-theme="light"] .danger-zone,
 body[data-theme="light"] hr {
   border-top-color: #e1dfdd;
 }
@@ -754,7 +742,15 @@ body[data-theme="sepia"] .btn-secondary-sm {
   color: #3b2e24;
 }
 
-body[data-theme="sepia"] .filters-bar {
+body[data-theme="sepia"] .btn-danger {
+  background: #b85c1a;
+  color: white;
+}
+
+body[data-theme="sepia"] .filters-bar,
+body[data-theme="sepia"] .entry-card,
+body[data-theme="sepia"] .modal-content,
+body[data-theme="sepia"] .template-card {
   background: #fffef7;
   border-color: #d4c5a9;
 }
@@ -766,27 +762,20 @@ body[data-theme="sepia"] .form-group input,
 body[data-theme="sepia"] .form-group select,
 body[data-theme="sepia"] .form-group textarea,
 body[data-theme="sepia"] .theme-selector select {
-  border-color: #c4b49a;
   background: #fffef7;
+  border-color: #c4b49a;
+  color: #3b2e24;
 }
 
 body[data-theme="sepia"] .backup-banner {
   background: #f5e6d3;
   border-color: #d4a574;
+  color: #3b2e24;
 }
 
 body[data-theme="sepia"] .tour-hint {
   background: #3b2e24;
   color: #fbf7e9;
-}
-
-body[data-theme="sepia"] .entry-card {
-  background: #fffef7;
-  border-color: #d4c5a9;
-}
-
-body[data-theme="sepia"] .entry-card.pinned {
-  border-left-color: #d4a574;
 }
 
 body[data-theme="sepia"] .entry-template {
@@ -801,26 +790,19 @@ body[data-theme="sepia"] .entry-preview {
 
 body[data-theme="sepia"] .entry-fields {
   background: #f5f0e6;
-}
-
-body[data-theme="sepia"] .modal-content {
-  background: #fffef7;
+  color: #3b2e24;
 }
 
 body[data-theme="sepia"] .close {
   color: #8b7355;
 }
 
-body[data-theme="sepia"] .template-card,
 body[data-theme="sepia"] .field-item {
-  background: #fffef7;
+  background: #f5f0e6;
   border-color: #d4c5a9;
 }
 
-body[data-theme="sepia"] .danger-zone {
-  border-top-color: #d4c5a9;
-}
-
+body[data-theme="sepia"] .danger-zone,
 body[data-theme="sepia"] hr {
   border-top-color: #d4c5a9;
 }
@@ -861,7 +843,15 @@ body[data-theme="forest"] .btn-secondary-sm {
   color: #1a3b2e;
 }
 
-body[data-theme="forest"] .filters-bar {
+body[data-theme="forest"] .btn-danger {
+  background: #c0392b;
+  color: white;
+}
+
+body[data-theme="forest"] .filters-bar,
+body[data-theme="forest"] .entry-card,
+body[data-theme="forest"] .modal-content,
+body[data-theme="forest"] .template-card {
   background: white;
   border-color: #c5d5cb;
 }
@@ -873,27 +863,20 @@ body[data-theme="forest"] .form-group input,
 body[data-theme="forest"] .form-group select,
 body[data-theme="forest"] .form-group textarea,
 body[data-theme="forest"] .theme-selector select {
-  border-color: #b5cdbc;
   background: white;
+  border-color: #b5cdbc;
+  color: #1a3b2e;
 }
 
 body[data-theme="forest"] .backup-banner {
   background: #e2f0e6;
   border-color: #95c4a5;
+  color: #1a3b2e;
 }
 
 body[data-theme="forest"] .tour-hint {
   background: #1a3b2e;
   color: #eef4ed;
-}
-
-body[data-theme="forest"] .entry-card {
-  background: white;
-  border-color: #c5d5cb;
-}
-
-body[data-theme="forest"] .entry-card.pinned {
-  border-left-color: #95c4a5;
 }
 
 body[data-theme="forest"] .entry-template {
@@ -908,26 +891,19 @@ body[data-theme="forest"] .entry-preview {
 
 body[data-theme="forest"] .entry-fields {
   background: #eef4ed;
-}
-
-body[data-theme="forest"] .modal-content {
-  background: white;
+  color: #1a3b2e;
 }
 
 body[data-theme="forest"] .close {
   color: #2d6a4f;
 }
 
-body[data-theme="forest"] .template-card,
 body[data-theme="forest"] .field-item {
-  background: white;
+  background: #eef4ed;
   border-color: #c5d5cb;
 }
 
-body[data-theme="forest"] .danger-zone {
-  border-top-color: #c5d5cb;
-}
-
+body[data-theme="forest"] .danger-zone,
 body[data-theme="forest"] hr {
   border-top-color: #c5d5cb;
 }
@@ -935,7 +911,7 @@ body[data-theme="forest"] hr {
 /* Theme 4: Midnight Blue */
 body[data-theme="midnight"] {
   background-color: #1a1b2e;
-  color: #c0c0d0;
+  color: #e0e0f0;
 }
 
 body[data-theme="midnight"] header {
@@ -947,7 +923,7 @@ body[data-theme="midnight"] nav a {
 }
 
 body[data-theme="midnight"] nav a.active {
-  color: #c0c0d0;
+  color: #e0e0f0;
   border-bottom-color: #7c3aed;
 }
 
@@ -965,10 +941,18 @@ body[data-theme="midnight"] .btn-quick {
 body[data-theme="midnight"] .btn-secondary,
 body[data-theme="midnight"] .btn-secondary-sm {
   background: #2a2b45;
-  color: #c0c0d0;
+  color: #e0e0f0;
 }
 
-body[data-theme="midnight"] .filters-bar {
+body[data-theme="midnight"] .btn-danger {
+  background: #dc2626;
+  color: white;
+}
+
+body[data-theme="midnight"] .filters-bar,
+body[data-theme="midnight"] .entry-card,
+body[data-theme="midnight"] .modal-content,
+body[data-theme="midnight"] .template-card {
   background: #252642;
   border-color: #2a2b45;
 }
@@ -980,14 +964,15 @@ body[data-theme="midnight"] .form-group input,
 body[data-theme="midnight"] .form-group select,
 body[data-theme="midnight"] .form-group textarea,
 body[data-theme="midnight"] .theme-selector select {
+  background: #1f2038;
   border-color: #3a3b5e;
-  background: #252642;
-  color: #c0c0d0;
+  color: #e0e0f0;
 }
 
 body[data-theme="midnight"] .backup-banner {
   background: #2a2b45;
   border-color: #5b21b6;
+  color: #e0e0f0;
 }
 
 body[data-theme="midnight"] .tour-hint {
@@ -995,18 +980,9 @@ body[data-theme="midnight"] .tour-hint {
   color: white;
 }
 
-body[data-theme="midnight"] .entry-card {
-  background: #252642;
-  border-color: #2a2b45;
-}
-
-body[data-theme="midnight"] .entry-card.pinned {
-  border-left-color: #a78bfa;
-}
-
 body[data-theme="midnight"] .entry-template {
   background: #2a2b45;
-  color: #c0c0d0;
+  color: #e0e0f0;
 }
 
 body[data-theme="midnight"] .entry-date,
@@ -1016,26 +992,19 @@ body[data-theme="midnight"] .entry-preview {
 
 body[data-theme="midnight"] .entry-fields {
   background: #1f2038;
-}
-
-body[data-theme="midnight"] .modal-content {
-  background: #252642;
+  color: #e0e0f0;
 }
 
 body[data-theme="midnight"] .close {
   color: #8b8ba8;
 }
 
-body[data-theme="midnight"] .template-card,
 body[data-theme="midnight"] .field-item {
-  background: #252642;
+  background: #1f2038;
   border-color: #2a2b45;
 }
 
-body[data-theme="midnight"] .danger-zone {
-  border-top-color: #2a2b45;
-}
-
+body[data-theme="midnight"] .danger-zone,
 body[data-theme="midnight"] hr {
   border-top-color: #2a2b45;
 }
@@ -1076,7 +1045,15 @@ body[data-theme="red"] .btn-secondary-sm {
   color: #f0d6d8;
 }
 
-body[data-theme="red"] .filters-bar {
+body[data-theme="red"] .btn-danger {
+  background: #b91c1c;
+  color: white;
+}
+
+body[data-theme="red"] .filters-bar,
+body[data-theme="red"] .entry-card,
+body[data-theme="red"] .modal-content,
+body[data-theme="red"] .template-card {
   background: #3d1a1e;
   border-color: #4a2024;
 }
@@ -1088,28 +1065,20 @@ body[data-theme="red"] .form-group input,
 body[data-theme="red"] .form-group select,
 body[data-theme="red"] .form-group textarea,
 body[data-theme="red"] .theme-selector select {
+  background: #2a1215;
   border-color: #5a2e32;
-  background: #3d1a1e;
   color: #f0d6d8;
 }
 
 body[data-theme="red"] .backup-banner {
   background: #4a2024;
   border-color: #e53e3e;
+  color: #f0d6d8;
 }
 
 body[data-theme="red"] .tour-hint {
   background: #e53e3e;
   color: white;
-}
-
-body[data-theme="red"] .entry-card {
-  background: #3d1a1e;
-  border-color: #4a2024;
-}
-
-body[data-theme="red"] .entry-card.pinned {
-  border-left-color: #e53e3e;
 }
 
 body[data-theme="red"] .entry-template {
@@ -1124,26 +1093,19 @@ body[data-theme="red"] .entry-preview {
 
 body[data-theme="red"] .entry-fields {
   background: #2a1215;
-}
-
-body[data-theme="red"] .modal-content {
-  background: #3d1a1e;
+  color: #f0d6d8;
 }
 
 body[data-theme="red"] .close {
   color: #c08484;
 }
 
-body[data-theme="red"] .template-card,
 body[data-theme="red"] .field-item {
-  background: #3d1a1e;
+  background: #2a1215;
   border-color: #4a2024;
 }
 
-body[data-theme="red"] .danger-zone {
-  border-top-color: #4a2024;
-}
-
+body[data-theme="red"] .danger-zone,
 body[data-theme="red"] hr {
   border-top-color: #4a2024;
 }
