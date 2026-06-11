@@ -1,5 +1,5 @@
 /* ============================================
-   BASE STYLES (applies to all themes)
+   BASE STYLES
    ============================================ */
 * {
   margin: 0;
@@ -23,7 +23,7 @@ body {
   padding: 2rem 1rem;
 }
 
-/* Header & Navigation */
+/* Header */
 header {
   margin-bottom: 2rem;
   border-bottom: 1px solid;
@@ -70,7 +70,7 @@ nav a.active {
   font-size: 0.9rem;
   border-radius: 6px;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: opacity 0.2s;
 }
 
 .btn-primary:hover {
@@ -114,14 +114,9 @@ nav a.active {
   display: flex;
   gap: 1rem;
   margin-bottom: 1.5rem;
-  justify-content: space-between;
 }
 
-.action-bar button:first-child {
-  flex: 1;
-}
-
-.action-bar button:last-child {
+.action-bar button {
   flex: 1;
 }
 
@@ -234,7 +229,7 @@ nav a.active {
   }
 }
 
-/* Keyboard Shortcuts Hint */
+/* Keyboard Hint */
 .keyboard-hint {
   margin-top: 2rem;
   padding: 0.5rem;
@@ -263,7 +258,8 @@ nav a.active {
 }
 
 .entry-card.pinned {
-  border-left: 4px solid;
+  border-left-width: 4px;
+  border-left-style: solid;
 }
 
 .entry-header {
@@ -361,7 +357,7 @@ nav a.active {
   margin-bottom: 1rem;
 }
 
-/* Modal Base */
+/* Modals */
 .modal {
   display: none;
   position: fixed;
@@ -398,7 +394,7 @@ nav a.active {
   opacity: 0.7;
 }
 
-/* Form Elements */
+/* Forms */
 .form-group {
   margin-bottom: 1rem;
 }
@@ -467,6 +463,8 @@ nav a.active {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  gap: 1rem;
 }
 
 .templates-list {
@@ -496,17 +494,19 @@ nav a.active {
 }
 
 .template-header button {
-  background: none;
   border: none;
   cursor: pointer;
   font-size: 0.8rem;
-  margin-left: 0.5rem;
+  padding: 0.25rem 0.6rem;
+  border-radius: 4px;
+  margin-left: 0.25rem;
 }
 
 .template-actions {
   display: flex;
   gap: 0.75rem;
   margin-top: 1rem;
+  flex-wrap: wrap;
 }
 
 .backup-actions {
@@ -602,10 +602,8 @@ hr {
 }
 
 /* ============================================
-   THEMES — FULLY CONSISTENT
+   THEME 1: LIGHT (DEFAULT)
    ============================================ */
-
-/* Theme 1: Light (default) */
 body[data-theme="light"] {
   background-color: #faf9f8;
   color: #1e1e1e;
@@ -706,7 +704,18 @@ body[data-theme="light"] hr {
   border-top-color: #e1dfdd;
 }
 
-/* Theme 2: Sepia */
+body[data-theme="light"] .template-header button {
+  background: #e1dfdd;
+  color: #1e1e1e;
+}
+
+body[data-theme="light"] .template-header button:hover {
+  background: #d1cfcd;
+}
+
+/* ============================================
+   THEME 2: SEPIA
+   ============================================ */
 body[data-theme="sepia"] {
   background-color: #fbf7e9;
   color: #3b2e24;
@@ -807,7 +816,18 @@ body[data-theme="sepia"] hr {
   border-top-color: #d4c5a9;
 }
 
-/* Theme 3: Forest */
+body[data-theme="sepia"] .template-header button {
+  background: #e0d5c0;
+  color: #3b2e24;
+}
+
+body[data-theme="sepia"] .template-header button:hover {
+  background: #d0c5b0;
+}
+
+/* ============================================
+   THEME 3: FOREST
+   ============================================ */
 body[data-theme="forest"] {
   background-color: #eef4ed;
   color: #1a3b2e;
@@ -839,7 +859,7 @@ body[data-theme="forest"] .btn-quick {
 
 body[data-theme="forest"] .btn-secondary,
 body[data-theme="forest"] .btn-secondary-sm {
-  background: #d4e6d9;
+  background: #c5d5cb;
   color: #1a3b2e;
 }
 
@@ -852,7 +872,7 @@ body[data-theme="forest"] .filters-bar,
 body[data-theme="forest"] .entry-card,
 body[data-theme="forest"] .modal-content,
 body[data-theme="forest"] .template-card {
-  background: white;
+  background: #eef4ed;
   border-color: #c5d5cb;
 }
 
@@ -869,7 +889,7 @@ body[data-theme="forest"] .theme-selector select {
 }
 
 body[data-theme="forest"] .backup-banner {
-  background: #e2f0e6;
+  background: #d4e6d9;
   border-color: #95c4a5;
   color: #1a3b2e;
 }
@@ -880,7 +900,7 @@ body[data-theme="forest"] .tour-hint {
 }
 
 body[data-theme="forest"] .entry-template {
-  background: #d4e6d9;
+  background: #c5d5cb;
   color: #1a3b2e;
 }
 
@@ -890,7 +910,7 @@ body[data-theme="forest"] .entry-preview {
 }
 
 body[data-theme="forest"] .entry-fields {
-  background: #eef4ed;
+  background: #dde9df;
   color: #1a3b2e;
 }
 
@@ -899,7 +919,7 @@ body[data-theme="forest"] .close {
 }
 
 body[data-theme="forest"] .field-item {
-  background: #eef4ed;
+  background: #dde9df;
   border-color: #c5d5cb;
 }
 
@@ -908,7 +928,18 @@ body[data-theme="forest"] hr {
   border-top-color: #c5d5cb;
 }
 
-/* Theme 4: Midnight Blue */
+body[data-theme="forest"] .template-header button {
+  background: #c5d5cb;
+  color: #1a3b2e;
+}
+
+body[data-theme="forest"] .template-header button:hover {
+  background: #b5cdbc;
+}
+
+/* ============================================
+   THEME 4: MIDNIGHT BLUE
+   ============================================ */
 body[data-theme="midnight"] {
   background-color: #1a1b2e;
   color: #e0e0f0;
@@ -987,7 +1018,7 @@ body[data-theme="midnight"] .entry-template {
 
 body[data-theme="midnight"] .entry-date,
 body[data-theme="midnight"] .entry-preview {
-  color: #8b8ba8;
+  color: #a78bfa;
 }
 
 body[data-theme="midnight"] .entry-fields {
@@ -996,7 +1027,7 @@ body[data-theme="midnight"] .entry-fields {
 }
 
 body[data-theme="midnight"] .close {
-  color: #8b8ba8;
+  color: #a78bfa;
 }
 
 body[data-theme="midnight"] .field-item {
@@ -1009,7 +1040,18 @@ body[data-theme="midnight"] hr {
   border-top-color: #2a2b45;
 }
 
-/* Theme 5: Red Ember */
+body[data-theme="midnight"] .template-header button {
+  background: #2a2b45;
+  color: #e0e0f0;
+}
+
+body[data-theme="midnight"] .template-header button:hover {
+  background: #3a3b5e;
+}
+
+/* ============================================
+   THEME 5: RED EMBER
+   ============================================ */
 body[data-theme="red"] {
   background-color: #2a1215;
   color: #f0d6d8;
@@ -1041,7 +1083,7 @@ body[data-theme="red"] .btn-quick {
 
 body[data-theme="red"] .btn-secondary,
 body[data-theme="red"] .btn-secondary-sm {
-  background: #3d1a1e;
+  background: #4a2024;
   color: #f0d6d8;
 }
 
@@ -1088,7 +1130,7 @@ body[data-theme="red"] .entry-template {
 
 body[data-theme="red"] .entry-date,
 body[data-theme="red"] .entry-preview {
-  color: #c08484;
+  color: #f7a0a0;
 }
 
 body[data-theme="red"] .entry-fields {
@@ -1097,7 +1139,7 @@ body[data-theme="red"] .entry-fields {
 }
 
 body[data-theme="red"] .close {
-  color: #c08484;
+  color: #f7a0a0;
 }
 
 body[data-theme="red"] .field-item {
@@ -1108,4 +1150,13 @@ body[data-theme="red"] .field-item {
 body[data-theme="red"] .danger-zone,
 body[data-theme="red"] hr {
   border-top-color: #4a2024;
+}
+
+body[data-theme="red"] .template-header button {
+  background: #4a2024;
+  color: #f0d6d8;
+}
+
+body[data-theme="red"] .template-header button:hover {
+  background: #5a2e32;
 }
