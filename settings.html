@@ -6,7 +6,7 @@
     <title>Journal Settings</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
-  <body>
+  <body data-theme="light">
     <div class="container">
       <header>
         <h1>Settings</h1>
@@ -17,18 +17,79 @@
       </header>
 
       <main>
-        <div class="settings-header">
-          <h2>Templates</h2>
-          <button id="addTemplateBtn" class="btn-primary">
-            + Add Template
-          </button>
-        </div>
-        <div id="templatesList" class="templates-list">
-          <!-- Templates will be rendered here -->
+        <!-- Theme Selector -->
+        <div class="settings-section">
+          <h2>Appearance</h2>
+          <div class="theme-selector">
+            <label for="themeSelect">Theme</label>
+            <select id="themeSelect">
+              <option value="light">☀️ Light</option>
+              <option value="sepia">📜 Sepia</option>
+              <option value="forest">🌲 Forest</option>
+              <option value="midnight">🌙 Midnight Blue</option>
+              <option value="red">🔥 Red Ember</option>
+            </select>
+          </div>
         </div>
 
         <hr />
 
+        <!-- Templates Section -->
+        <div class="settings-section">
+          <div class="settings-header">
+            <h2>Templates</h2>
+            <button id="addTemplateBtn" class="btn-primary">
+              + Add Template
+            </button>
+          </div>
+          <div id="templatesList" class="templates-list">
+            <!-- Templates will be rendered here -->
+          </div>
+
+          <!-- Template Import/Export -->
+          <div class="template-actions">
+            <button id="exportTemplatesBtn" class="btn-secondary">
+              📤 Export Templates
+            </button>
+            <button id="importTemplatesBtn" class="btn-secondary">
+              📥 Import Templates
+            </button>
+            <input
+              type="file"
+              id="importTemplatesFile"
+              accept=".json"
+              style="display: none"
+            />
+          </div>
+        </div>
+
+        <hr />
+
+        <!-- Data Backup Section -->
+        <div class="settings-section">
+          <h2>Data Backup</h2>
+          <div class="backup-actions">
+            <button id="exportAllDataBtn" class="btn-primary">
+              💾 Export All Data (Backup)
+            </button>
+            <button id="importAllDataBtn" class="btn-secondary">
+              📂 Import Data (Restore)
+            </button>
+            <input
+              type="file"
+              id="importAllDataFile"
+              accept=".json"
+              style="display: none"
+            />
+          </div>
+          <p class="settings-hint">
+            Last backup: <span id="lastBackupDate">Never</span>
+          </p>
+        </div>
+
+        <hr />
+
+        <!-- Danger Zone -->
         <div class="danger-zone">
           <h3>Danger Zone</h3>
           <button id="clearAllDataBtn" class="btn-danger">
@@ -50,7 +111,7 @@
               type="text"
               id="templateName"
               required
-              placeholder="e.g., Workout Log, Daily Reflection"
+              placeholder="e.g., Forex Trade, Daily Reflection"
             />
           </div>
           <div id="fieldsList">
