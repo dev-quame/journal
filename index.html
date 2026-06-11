@@ -6,7 +6,7 @@
     <title>Journal</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
-  <body>
+  <body data-theme="light">
     <div class="container">
       <header>
         <h1>Journal</h1>
@@ -17,6 +17,21 @@
       </header>
 
       <main>
+        <!-- Backup Banner (hidden by default, shown by JS when needed) -->
+        <div id="backupBanner" class="backup-banner" style="display: none">
+          <p>
+            📦 <span id="backupDaysText">Last backup was over 30 days ago</span>
+          </p>
+          <div>
+            <button id="exportBackupBtn" class="btn-secondary-sm">
+              Export Data
+            </button>
+            <button id="dismissBackupBtn" class="btn-secondary-sm">
+              Dismiss for 7 days
+            </button>
+          </div>
+        </div>
+
         <!-- Action bar: Quick Entry + New Entry -->
         <div class="action-bar">
           <button id="quickEntryBtn" class="btn-quick">⚡ Quick Entry</button>
@@ -65,14 +80,28 @@
           <!-- Entries will be rendered here -->
         </div>
 
-        <!-- Empty state (shown via JS if no entries match filters) -->
+        <!-- Empty state -->
         <div id="emptyState" class="empty-state" style="display: none">
           <p>No entries found.</p>
           <button id="clearFiltersBtn" class="btn-secondary">
             Clear filters
           </button>
         </div>
+
+        <!-- Keyboard shortcuts hint -->
+        <div class="keyboard-hint">
+          ⌨️ N = New entry | Esc = Close | Ctrl+S = Save | J/K = Navigate
+          (coming soon)
+        </div>
       </main>
+    </div>
+
+    <!-- Tour Hint (shown once, dismissible) -->
+    <div id="tourHint" class="tour-hint" style="display: none">
+      <span class="close-hint" id="closeTourHint">✖</span>
+      <strong>👋 Welcome to Journal!</strong><br />
+      Go to <strong>Settings</strong> to create your first template and set a
+      default for Quick Entry.
     </div>
 
     <!-- Modal for new/edit entry (full) -->
@@ -96,6 +125,23 @@
               placeholder="Write your thoughts, rationale, or any notes here..."
             ></textarea>
           </div>
+
+          <!-- Version History (shown only when editing existing entry) -->
+          <div
+            id="versionHistoryContainer"
+            class="version-history"
+            style="display: none"
+          >
+            <hr />
+            <button type="button" id="undoVersionBtn" class="btn-secondary-sm">
+              ↩️ Undo to previous version
+            </button>
+            <span
+              id="versionInfo"
+              style="font-size: 0.7rem; margin-left: 0.5rem"
+            ></span>
+          </div>
+
           <button type="submit" class="btn-primary">Save Entry</button>
         </form>
       </div>
