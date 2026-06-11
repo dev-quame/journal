@@ -1,16 +1,28 @@
 // ---------- Data structure ----------
 let templates = [];
 let entries = [];
+let defaultTemplateId = null;
+let currentFilters = {
+  search: "",
+  templateId: "all",
+  dateRange: "all",
+  startDate: null,
+  endDate: null,
+};
 
 // Load from localStorage
 function loadData() {
   const storedTemplates = localStorage.getItem("journal_templates");
   const storedEntries = localStorage.getItem("journal_entries");
+  const storedDefaultTemplate = localStorage.getItem(
+    "journal_default_template",
+  );
 
   templates = storedTemplates ? JSON.parse(storedTemplates) : [];
   entries = storedEntries ? JSON.parse(storedEntries) : [];
+  defaultTemplateId = storedDefaultTemplate;
 
-  // If no templates exist, add a demo template so it's not empty
+  // If no templates exist, add a demo template
   if (templates.length === 0) {
     templates.push({
       id: "demo",
@@ -18,6 +30,12 @@ function loadData() {
       fields: [{ name: "Topic", type: "text", required: false }],
     });
     saveTemplates();
+  }
+
+  // Validate default template still exists
+  if (defaultTemplateId && !templates.find((t) => t.id === defaultTemplateId)) {
+    defaultTemplateId = null;
+    saveDefaultTemplate();
   }
 }
 
@@ -29,67 +47,15 @@ function saveEntries() {
   localStorage.setItem("journal_entries", JSON.stringify(entries));
 }
 
-// ---------- Render entries (index.html) ----------
-function renderEntries() {
-  const entriesList = document.getElementById("entriesList");
-  if (!entriesList) return;
-
-  if (entries.length === 0) {
-    entriesList.innerHTML =
-      '<p style="color: #616161;">No entries yet. Click "New Entry" to start.</p>';
-    return;
+function saveDefaultTemplate() {
+  if (defaultTemplateId) {
+    localStorage.setItem("journal_default_template", defaultTemplateId);
+  } else {
+    localStorage.removeItem("journal_default_template");
   }
-
-  entriesList.innerHTML = "";
-  [...entries].reverse().forEach((entry) => {
-    const template = templates.find((t) => t.id === entry.templateId);
-    const templateName = template ? template.name : "Unknown Template";
-
-    const card = document.createElement("div");
-    card.className = "entry-card";
-
-    let fieldsHtml = '<div class="entry-fields">';
-    for (const [key, value] of Object.entries(entry.fieldValues)) {
-      fieldsHtml += `<p><strong>${key}:</strong> ${value}</p>`;
-    }
-    fieldsHtml += "</div>";
-
-    card.innerHTML = `
-            <div class="entry-header">
-                <span class="entry-template">${escapeHtml(templateName)}</span>
-                <span>${new Date(entry.timestamp).toLocaleString()}</span>
-            </div>
-            ${fieldsHtml}
-            <div class="entry-journal">${escapeHtml(entry.journalText || "").replace(/\n/g, "<br>")}</div>
-            <div class="entry-actions">
-                <button class="edit-entry" data-id="${entry.id}">Edit</button>
-                <button class="delete-entry" data-id="${entry.id}">Delete</button>
-            </div>
-        `;
-
-    entriesList.appendChild(card);
-  });
-
-  // Add event listeners for edit/delete
-  document.querySelectorAll(".edit-entry").forEach((btn) => {
-    btn.addEventListener("click", (e) => {
-      const id = btn.getAttribute("data-id");
-      openEditModal(id);
-    });
-  });
-
-  document.querySelectorAll(".delete-entry").forEach((btn) => {
-    btn.addEventListener("click", (e) => {
-      const id = btn.getAttribute("data-id");
-      if (confirm("Delete this entry?")) {
-        entries = entries.filter((e) => e.id !== id);
-        saveEntries();
-        renderEntries();
-      }
-    });
-  });
 }
 
+// ---------- Helper functions ----------
 function escapeHtml(str) {
   if (!str) return "";
   return str.replace(/[&<>]/g, function (m) {
@@ -100,7 +66,286 @@ function escapeHtml(str) {
   });
 }
 
-// ---------- Modal logic (new/edit entry) ----------
+function getPreviewText(text, maxLength = 100) {
+  if (!text) return "";
+  if (text.length <= maxLength) return text;
+  return text.substring(0, maxLength).trim() + "...";
+}
+
+// ---------- Filter logic ----------
+function filterEntries() {
+  let filtered = [...entries];
+
+  // Search filter
+  if (currentFilters.search) {
+    const searchLower = currentFilters.search.toLowerCase();
+    filtered = filtered.filter((entry) => {
+      // Search in journal text
+      if (
+        entry.journalText &&
+        entry.journalText.toLowerCase().includes(searchLower)
+      )
+        return true;
+
+      // Search in field values
+      for (const value of Object.values(entry.fieldValues)) {
+        if (String(value).toLowerCase().includes(searchLower)) return true;
+      }
+      return false;
+    });
+  }
+
+  // Template filter
+  if (currentFilters.templateId !== "all") {
+    filtered = filtered.filter(
+      (entry) => entry.templateId === currentFilters.templateId,
+    );
+  }
+
+  // Date filter
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+  filtered = filtered.filter((entry) => {
+    const entryDate = new Date(entry.timestamp);
+    const entryDay = new Date(
+      entryDate.getFullYear(),
+      entryDate.getMonth(),
+      entryDate.getDate(),
+    );
+
+    switch (currentFilters.dateRange) {
+      case "7days":
+        const sevenDaysAgo = new Date(today);
+        sevenDaysAgo.setDate(today.getDate() - 7);
+        return entryDay >= sevenDaysAgo;
+      case "30days":
+        const thirtyDaysAgo = new Date(today);
+        thirtyDaysAgo.setDate(today.getDate() - 30);
+        return entryDay >= thirtyDaysAgo;
+      case "this-month":
+        return (
+          entryDate.getMonth() === now.getMonth() &&
+          entryDate.getFullYear() === now.getFullYear()
+        );
+      case "custom":
+        if (currentFilters.startDate && currentFilters.endDate) {
+          return (
+            entryDay >= currentFilters.startDate &&
+            entryDay <= currentFilters.endDate
+          );
+        }
+        return true;
+      default:
+        return true;
+    }
+  });
+
+  return filtered;
+}
+
+function renderEntries() {
+  const entriesList = document.getElementById("entriesList");
+  const emptyState = document.getElementById("emptyState");
+  if (!entriesList) return;
+
+  const filtered = filterEntries();
+
+  // Sort: pinned first, then by date (newest first)
+  const sorted = [...filtered].sort((a, b) => {
+    if (a.pinned && !b.pinned) return -1;
+    if (!a.pinned && b.pinned) return 1;
+    return b.timestamp - a.timestamp;
+  });
+
+  if (sorted.length === 0) {
+    entriesList.innerHTML = "";
+    if (emptyState) emptyState.style.display = "block";
+    return;
+  }
+
+  if (emptyState) emptyState.style.display = "none";
+
+  entriesList.innerHTML = "";
+
+  sorted.forEach((entry) => {
+    const template = templates.find((t) => t.id === entry.templateId);
+    const templateName = template ? template.name : "Unknown Template";
+
+    const card = document.createElement("div");
+    card.className = `entry-card ${entry.pinned ? "pinned" : ""}`;
+    card.dataset.id = entry.id;
+
+    // Build fields HTML
+    let fieldsHtml = '<div class="entry-fields">';
+    for (const [key, value] of Object.entries(entry.fieldValues)) {
+      if (value && value.toString().trim()) {
+        fieldsHtml += `<p><strong>${escapeHtml(key)}:</strong> ${escapeHtml(String(value))}</p>`;
+      }
+    }
+    fieldsHtml += "</div>";
+
+    const previewText = getPreviewText(entry.journalText || "");
+    const fullText = entry.journalText
+      ? escapeHtml(entry.journalText).replace(/\n/g, "<br>")
+      : "";
+
+    card.innerHTML = `
+            <div class="entry-header">
+                <span class="entry-template">${escapeHtml(templateName)}</span>
+                <span class="entry-date">${new Date(entry.timestamp).toLocaleString()}</span>
+            </div>
+            ${fieldsHtml}
+            <div class="entry-preview">${escapeHtml(previewText)}</div>
+            <div class="entry-full">
+                <div class="entry-journal">${fullText || "<em>No additional notes</em>"}</div>
+            </div>
+            <div class="entry-actions">
+                <button class="pin-btn ${entry.pinned ? "pinned" : ""}" data-id="${entry.id}">${entry.pinned ? "📌 Unpin" : "📍 Pin"}</button>
+                <button class="edit-entry" data-id="${entry.id}">✏️ Edit</button>
+                <button class="delete-entry" data-id="${entry.id}">🗑️ Delete</button>
+            </div>
+        `;
+
+    entriesList.appendChild(card);
+  });
+
+  // Add event listeners for expand/collapse
+  document.querySelectorAll(".entry-preview").forEach((preview) => {
+    preview.addEventListener("click", function () {
+      const card = this.closest(".entry-card");
+      if (card) card.classList.toggle("expanded");
+    });
+  });
+
+  // Pin buttons
+  document.querySelectorAll(".pin-btn").forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const id = btn.getAttribute("data-id");
+      const entry = entries.find((e) => e.id === id);
+      if (entry) {
+        entry.pinned = !entry.pinned;
+        saveEntries();
+        renderEntries();
+      }
+    });
+  });
+
+  // Edit buttons
+  document.querySelectorAll(".edit-entry").forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const id = btn.getAttribute("data-id");
+      openEditModal(id);
+    });
+  });
+
+  // Delete buttons
+  document.querySelectorAll(".delete-entry").forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const id = btn.getAttribute("data-id");
+      if (confirm("Delete this entry?")) {
+        entries = entries.filter((e) => e.id !== id);
+        saveEntries();
+        renderEntries();
+        updateTemplateFilter(); // In case template count changes
+      }
+    });
+  });
+}
+
+// ---------- Filter UI bindings ----------
+function bindFilters() {
+  const searchInput = document.getElementById("searchInput");
+  const templateFilter = document.getElementById("templateFilter");
+  const dateFilter = document.getElementById("dateFilter");
+  const customRange = document.getElementById("customDateRange");
+  const startDate = document.getElementById("startDate");
+  const endDate = document.getElementById("endDate");
+  const applyDateRange = document.getElementById("applyDateRange");
+  const clearFiltersBtn = document.getElementById("clearFiltersBtn");
+
+  if (searchInput) {
+    searchInput.addEventListener("input", (e) => {
+      currentFilters.search = e.target.value;
+      renderEntries();
+    });
+  }
+
+  if (templateFilter) {
+    templateFilter.addEventListener("change", (e) => {
+      currentFilters.templateId = e.target.value;
+      renderEntries();
+    });
+  }
+
+  if (dateFilter) {
+    dateFilter.addEventListener("change", (e) => {
+      currentFilters.dateRange = e.target.value;
+      if (currentFilters.dateRange === "custom") {
+        if (customRange) customRange.style.display = "flex";
+      } else {
+        if (customRange) customRange.style.display = "none";
+        currentFilters.startDate = null;
+        currentFilters.endDate = null;
+        renderEntries();
+      }
+    });
+  }
+
+  if (applyDateRange) {
+    applyDateRange.addEventListener("click", () => {
+      if (startDate && startDate.value && endDate && endDate.value) {
+        currentFilters.startDate = new Date(startDate.value);
+        currentFilters.endDate = new Date(endDate.value);
+        currentFilters.endDate.setHours(23, 59, 59);
+        renderEntries();
+      } else {
+        alert("Please select both start and end dates");
+      }
+    });
+  }
+
+  if (clearFiltersBtn) {
+    clearFiltersBtn.addEventListener("click", () => {
+      if (searchInput) searchInput.value = "";
+      if (templateFilter) templateFilter.value = "all";
+      if (dateFilter) dateFilter.value = "all";
+      if (customRange) customRange.style.display = "none";
+      if (startDate) startDate.value = "";
+      if (endDate) endDate.value = "";
+
+      currentFilters = {
+        search: "",
+        templateId: "all",
+        dateRange: "all",
+        startDate: null,
+        endDate: null,
+      };
+      renderEntries();
+    });
+  }
+}
+
+function updateTemplateFilter() {
+  const templateFilter = document.getElementById("templateFilter");
+  if (!templateFilter) return;
+
+  const currentValue = templateFilter.value;
+  templateFilter.innerHTML = '<option value="all">All templates</option>';
+
+  templates.forEach((t) => {
+    const option = document.createElement("option");
+    option.value = t.id;
+    option.textContent = `${t.name} (${entries.filter((e) => e.templateId === t.id).length})`;
+    if (currentValue === t.id) option.selected = true;
+    templateFilter.appendChild(option);
+  });
+}
+
+// ---------- Modal logic (full entry) ----------
 function openNewEntryModal() {
   const modal = document.getElementById("entryModal");
   const modalTitle = document.getElementById("modalTitle");
@@ -127,12 +372,10 @@ function openEditModal(entryId) {
   populateTemplateSelect(entry.templateId);
   document.getElementById("journalText").value = entry.journalText || "";
 
-  // Trigger template change to load fields, then fill values
   const templateSelect = document.getElementById("templateSelect");
   templateSelect.value = entry.templateId;
   templateSelect.dispatchEvent(new Event("change"));
 
-  // Need to wait for fields to render, then populate
   setTimeout(() => {
     for (const [key, value] of Object.entries(entry.fieldValues)) {
       const input = document.querySelector(`[data-field-name="${key}"]`);
@@ -154,7 +397,6 @@ function populateTemplateSelect(selectedId = "") {
     select.appendChild(option);
   });
 
-  // Trigger change to load fields
   select.dispatchEvent(new Event("change"));
 }
 
@@ -177,8 +419,6 @@ function onTemplateChange() {
       input = document.createElement("textarea");
       input.rows = 3;
     } else if (field.type === "select") {
-      input = document.createElement("select");
-      // You'd need options stored; for simplicity, treat select as text for demo
       input = document.createElement("input");
       input.type = "text";
     } else {
@@ -211,7 +451,6 @@ function saveEntryFromModal(event) {
   const template = templates.find((t) => t.id === templateId);
   if (!template) return;
 
-  // Collect field values
   const fieldValues = {};
   for (const field of template.fields) {
     const input = document.querySelector(`[data-field-name="${field.name}"]`);
@@ -221,7 +460,6 @@ function saveEntryFromModal(event) {
   const journalText = document.getElementById("journalText").value;
 
   if (editId) {
-    // Update existing
     const index = entries.findIndex((e) => e.id === editId);
     if (index !== -1) {
       entries[index] = {
@@ -233,18 +471,19 @@ function saveEntryFromModal(event) {
       };
     }
   } else {
-    // New entry
     entries.push({
       id: Date.now().toString(),
       templateId,
       fieldValues,
       journalText,
       timestamp: Date.now(),
+      pinned: false,
     });
   }
 
   saveEntries();
   closeModal();
+  updateTemplateFilter();
   renderEntries();
 }
 
@@ -253,7 +492,108 @@ function closeModal() {
   if (modal) modal.style.display = "none";
 }
 
-// ---------- Settings page logic ----------
+// ---------- Quick Entry logic ----------
+function openQuickEntryModal() {
+  if (!defaultTemplateId) {
+    alert("Please set a default template in Settings first.");
+    return;
+  }
+
+  const template = templates.find((t) => t.id === defaultTemplateId);
+  if (!template) {
+    alert("Default template not found. Please set a new one in Settings.");
+    return;
+  }
+
+  const modal = document.getElementById("quickEntryModal");
+  const templateNameSpan = document.getElementById("quickTemplateName");
+  const dynamicFields = document.getElementById("quickDynamicFields");
+
+  if (templateNameSpan) templateNameSpan.textContent = template.name;
+
+  // Render only first 3 fields for quick entry (or all if less)
+  dynamicFields.innerHTML = "";
+  const quickFields = template.fields.slice(0, 3);
+
+  for (const field of quickFields) {
+    const div = document.createElement("div");
+    div.className = "form-group";
+
+    let input;
+    if (field.type === "textarea") {
+      input = document.createElement("textarea");
+      input.rows = 2;
+    } else {
+      input = document.createElement("input");
+      input.type = field.type === "number" ? "number" : "text";
+    }
+
+    input.placeholder = field.name;
+    input.setAttribute("data-quick-field-name", field.name);
+
+    const label = document.createElement("label");
+    label.textContent = field.name;
+
+    div.appendChild(label);
+    div.appendChild(input);
+    dynamicFields.appendChild(div);
+  }
+
+  document.getElementById("quickJournalText").value = "";
+  modal.style.display = "block";
+}
+
+function saveQuickEntry(event) {
+  event.preventDefault();
+
+  if (!defaultTemplateId) {
+    alert("No default template set.");
+    closeQuickModal();
+    return;
+  }
+
+  const template = templates.find((t) => t.id === defaultTemplateId);
+  if (!template) return;
+
+  // Collect quick fields
+  const fieldValues = {};
+  for (const field of template.fields.slice(0, 3)) {
+    const input = document.querySelector(
+      `[data-quick-field-name="${field.name}"]`,
+    );
+    if (input && input.value.trim()) {
+      fieldValues[field.name] = input.value;
+    }
+  }
+
+  const journalText = document.getElementById("quickJournalText").value;
+
+  entries.push({
+    id: Date.now().toString(),
+    templateId: defaultTemplateId,
+    fieldValues: fieldValues,
+    journalText: journalText,
+    timestamp: Date.now(),
+    pinned: false,
+  });
+
+  saveEntries();
+  closeQuickModal();
+  updateTemplateFilter();
+  renderEntries();
+}
+
+function closeQuickModal() {
+  const modal = document.getElementById("quickEntryModal");
+  if (modal) modal.style.display = "none";
+}
+
+function openFullFromQuick() {
+  closeQuickModal();
+  openNewEntryModal();
+}
+
+// ---------- Settings page logic (simplified, kept from original) ----------
 function renderTemplates() {
   const container = document.getElementById("templatesList");
   if (!container) return;
@@ -275,10 +615,13 @@ function renderTemplates() {
     });
     fieldsHtml += "</ul>";
 
+    const isDefault = defaultTemplateId === t.id;
+
     card.innerHTML = `
             <div class="template-header">
-                <strong>${escapeHtml(t.name)}</strong>
+                <strong>${escapeHtml(t.name)} ${isDefault ? "⭐ (Default)" : ""}</strong>
                 <div>
+                    ${!isDefault ? `<button class="set-default-template" data-id="${t.id}">Set as Default</button>` : ""}
                     <button class="edit-template" data-id="${t.id}">Edit</button>
                     <button class="delete-template" data-id="${t.id}">Delete</button>
                 </div>
@@ -286,6 +629,14 @@ function renderTemplates() {
             ${fieldsHtml}
         `;
     container.appendChild(card);
+  });
+
+  document.querySelectorAll(".set-default-template").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      defaultTemplateId = btn.getAttribute("data-id");
+      saveDefaultTemplate();
+      renderTemplates();
+    });
   });
 
   document.querySelectorAll(".edit-template").forEach((btn) => {
@@ -297,15 +648,18 @@ function renderTemplates() {
   document.querySelectorAll(".delete-template").forEach((btn) => {
     btn.addEventListener("click", () => {
       if (
-        confirm(
-          "Delete this template? All entries using it will remain but show as unknown template.",
-        )
+        confirm("Delete this template? Entries using it will show as unknown.")
       ) {
-        templates = templates.filter(
-          (t) => t.id !== btn.getAttribute("data-id"),
-        );
+        const id = btn.getAttribute("data-id");
+        if (defaultTemplateId === id) {
+          defaultTemplateId = null;
+          saveDefaultTemplate();
+        }
+        templates = templates.filter((t) => t.id !== id);
         saveTemplates();
         renderTemplates();
+        updateTemplateFilter();
+        renderEntries();
       }
     });
   });
@@ -357,7 +711,6 @@ function renderFieldInputs(fields) {
     container.appendChild(div);
   });
 
-  // Attach remove handlers
   document.querySelectorAll(".remove-field").forEach((btn) => {
     btn.addEventListener("click", (e) => {
       const idx = parseInt(btn.getAttribute("data-index"));
@@ -416,6 +769,7 @@ function saveTemplateFromModal(event) {
   saveTemplates();
   closeTemplateModal();
   renderTemplates();
+  updateTemplateFilter();
 }
 
 function closeTemplateModal() {
@@ -432,6 +786,7 @@ function clearAllData() {
     entries = [];
     saveEntries();
     renderEntries();
+    updateTemplateFilter();
     alert("All entries deleted.");
   }
 }
@@ -468,24 +823,44 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   } else {
     // index.html
+    updateTemplateFilter();
     renderEntries();
+    bindFilters();
 
     const modal = document.getElementById("entryModal");
+    const quickModal = document.getElementById("quickEntryModal");
+
     document
       .getElementById("newEntryBtn")
       ?.addEventListener("click", openNewEntryModal);
     document
+      .getElementById("quickEntryBtn")
+      ?.addEventListener("click", openQuickEntryModal);
+
+    document
       .querySelector("#entryModal .close")
       ?.addEventListener("click", closeModal);
     document
+      .querySelector("#quickEntryModal .close")
+      ?.addEventListener("click", closeQuickModal);
+
+    document
       .getElementById("entryForm")
       ?.addEventListener("submit", saveEntryFromModal);
+    document
+      .getElementById("quickEntryForm")
+      ?.addEventListener("submit", saveQuickEntry);
+    document
+      .getElementById("quickEntryFullEditBtn")
+      ?.addEventListener("click", openFullFromQuick);
+
     document
       .getElementById("templateSelect")
       ?.addEventListener("change", onTemplateChange);
 
     window.addEventListener("click", (e) => {
       if (e.target === modal) closeModal();
+      if (e.target === quickModal) closeQuickModal();
     });
   }
 });
