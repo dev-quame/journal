@@ -30,7 +30,7 @@ You design the fields. The journal just stores them.
 
 ---
 
-## Featuress
+## Features
 
 - Custom templates — name, field types (text, number, date, textarea)
 - Quick Entry — uses your default template, shows first 3 fields
