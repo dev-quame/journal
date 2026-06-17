@@ -4,7 +4,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Journal</title>
-    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="style.css" />
+    <link rel="manifest" href="manifest.json" />
   </head>
   <body data-theme="light">
     <div class="container">
@@ -17,7 +18,7 @@
       </header>
 
       <main>
-        <!-- Backup Banner (hidden by default, shown by JS when needed) -->
+        <!-- Backup Banner -->
         <div id="backupBanner" class="backup-banner" style="display: none">
           <p>
             📦 <span id="backupDaysText">Last backup was over 30 days ago</span>
@@ -32,13 +33,13 @@
           </div>
         </div>
 
-        <!-- Action bar: Quick Entry + New Entry -->
+        <!-- Action bar -->
         <div class="action-bar">
           <button id="quickEntryBtn" class="btn-quick">⚡ Quick Entry</button>
           <button id="newEntryBtn" class="btn-primary">+ New Entry</button>
         </div>
 
-        <!-- Search & Filters bar -->
+        <!-- Filters bar -->
         <div class="filters-bar">
           <div class="search-group">
             <input
@@ -48,12 +49,10 @@
               class="search-input"
             />
           </div>
-
           <div class="filter-group">
             <select id="templateFilter" class="filter-select">
               <option value="all">All templates</option>
             </select>
-
             <select id="dateFilter" class="filter-select">
               <option value="all">All time</option>
               <option value="7days">Last 7 days</option>
@@ -62,7 +61,6 @@
               <option value="custom">Custom range</option>
             </select>
           </div>
-
           <div
             id="customDateRange"
             class="custom-date-range"
@@ -75,10 +73,8 @@
           </div>
         </div>
 
-        <!-- Entries container -->
-        <div id="entriesList" class="entries-list">
-          <!-- Entries will be rendered here -->
-        </div>
+        <!-- Entries -->
+        <div id="entriesList" class="entries-list"></div>
 
         <!-- Empty state -->
         <div id="emptyState" class="empty-state" style="display: none">
@@ -88,15 +84,13 @@
           </button>
         </div>
 
-        <!-- Keyboard shortcuts hint -->
         <div class="keyboard-hint">
-          ⌨️ N = New entry | Esc = Close | Ctrl+S = Save | J/K = Navigate
-          (coming soon)
+          ⌨️ N = New entry | Esc = Close | Ctrl+S = Save
         </div>
       </main>
     </div>
 
-    <!-- Tour Hint (shown once, dismissible) -->
+    <!-- Tour Hint -->
     <div id="tourHint" class="tour-hint" style="display: none">
       <span class="close-hint" id="closeTourHint">✖</span>
       <strong>👋 Welcome to Journal!</strong><br />
@@ -104,7 +98,7 @@
       default for Quick Entry.
     </div>
 
-    <!-- Modal for new/edit entry (full) -->
+    <!-- Full Entry Modal -->
     <div id="entryModal" class="modal">
       <div class="modal-content">
         <span class="close">&times;</span>
@@ -126,7 +120,30 @@
             ></textarea>
           </div>
 
-          <!-- Version History (shown only when editing existing entry) -->
+          <!-- Image Upload -->
+          <div class="form-group">
+            <label for="entryImage">Screenshot / Image</label>
+            <input type="file" id="entryImage" accept="image/*" />
+            <div
+              id="imagePreviewContainer"
+              style="margin-top: 0.5rem; display: none"
+            >
+              <img
+                id="imagePreview"
+                style="max-width: 100%; max-height: 200px; border-radius: 6px"
+              />
+              <button
+                type="button"
+                id="removeImageBtn"
+                class="btn-secondary-sm"
+                style="display: block; margin-top: 0.25rem"
+              >
+                ✖ Remove image
+              </button>
+            </div>
+          </div>
+
+          <!-- Version History -->
           <div
             id="versionHistoryContainer"
             class="version-history"
@@ -147,12 +164,12 @@
       </div>
     </div>
 
-    <!-- Modal for Quick Entry (compact) -->
+    <!-- Quick Entry Modal -->
     <div id="quickEntryModal" class="modal">
       <div class="modal-content modal-compact">
         <span class="close">&times;</span>
         <h2>Quick Entry</h2>
-        <p class="quick-template-info" id="quickTemplateInfo">
+        <p class="quick-template-info">
           Using template: <span id="quickTemplateName"></span>
         </p>
         <form id="quickEntryForm">
@@ -179,6 +196,50 @@
       </div>
     </div>
 
+    <!-- Image Lightbox (for viewing full images) -->
+    <div id="imageLightbox" class="modal">
+      <div
+        class="modal-content"
+        style="
+          max-width: 90%;
+          max-height: 90%;
+          padding: 0;
+          background: transparent;
+        "
+      >
+        <span
+          class="close"
+          id="lightboxClose"
+          style="
+            color: white;
+            font-size: 2rem;
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+          "
+          >&times;</span
+        >
+        <img
+          id="lightboxImage"
+          style="
+            max-width: 100%;
+            max-height: 90vh;
+            display: block;
+            margin: 0 auto;
+            border-radius: 8px;
+          "
+        />
+      </div>
+    </div>
+
     <script src="script.js"></script>
+    <script>
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker
+          .register("./service-worker.js")
+          .then((reg) => console.log("Service Worker registered", reg))
+          .catch((err) => console.log("Service Worker failed", err));
+      }
+    </script>
   </body>
 </html>
