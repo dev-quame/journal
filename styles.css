@@ -1160,3 +1160,151 @@ body[data-theme="red"] .template-header button {
 body[data-theme="red"] .template-header button:hover {
   background: #5a2e32;
 }
+
+/* ============================================
+   IMAGE STYLES
+   ============================================ */
+
+.entry-image-thumb {
+  max-width: 100%;
+  max-height: 150px;
+  border-radius: 6px;
+  margin: 0.5rem 0;
+  cursor: pointer;
+  border: 1px solid;
+  transition: opacity 0.2s;
+}
+
+.entry-image-thumb:hover {
+  opacity: 0.85;
+}
+
+#imagePreviewContainer {
+  margin-top: 0.5rem;
+}
+
+#imagePreview {
+  max-width: 100%;
+  max-height: 200px;
+  border-radius: 6px;
+  border: 1px solid;
+}
+
+/* Lightbox */
+#imageLightbox .modal-content {
+  background: transparent;
+  box-shadow: none;
+}
+
+#lightboxClose {
+  color: white;
+  font-size: 2rem;
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  cursor: pointer;
+  z-index: 1001;
+  background: rgba(0, 0, 0, 0.5);
+  padding: 0.25rem 0.75rem;
+  border-radius: 4px;
+}
+
+#lightboxClose:hover {
+  background: rgba(0, 0, 0, 0.8);
+}
+
+/* ============================================
+   FIX: Entry action buttons (Pin, Edit, Delete) 
+   — ALL THEMES
+   ============================================ */
+
+/* Light */
+body[data-theme="light"] .entry-actions button {
+  color: #616161;
+}
+
+body[data-theme="light"] .entry-actions button:hover {
+  color: #1e1e1e;
+}
+
+body[data-theme="light"] .pin-btn.pinned {
+  color: #f5a623;
+}
+
+/* Sepia */
+body[data-theme="sepia"] .entry-actions button {
+  color: #8b7355;
+}
+
+body[data-theme="sepia"] .entry-actions button:hover {
+  color: #3b2e24;
+}
+
+body[data-theme="sepia"] .pin-btn.pinned {
+  color: #b8854a;
+}
+
+/* Forest */
+body[data-theme="forest"] .entry-actions button {
+  color: #2d6a4f;
+}
+
+body[data-theme="forest"] .entry-actions button:hover {
+  color: #1a3b2e;
+}
+
+body[data-theme="forest"] .pin-btn.pinned {
+  color: #2d6a4f;
+}
+
+/* Midnight */
+body[data-theme="midnight"] .entry-actions button {
+  color: #a78bfa;
+}
+
+body[data-theme="midnight"] .entry-actions button:hover {
+  color: #e0e0f0;
+}
+
+body[data-theme="midnight"] .pin-btn.pinned {
+  color: #a78bfa;
+}
+
+/* Red Ember */
+body[data-theme="red"] .entry-actions button {
+  color: #f7a0a0;
+}
+
+body[data-theme="red"] .entry-actions button:hover {
+  color: #f0d6d8;
+}
+
+body[data-theme="red"] .pin-btn.pinned {
+  color: #f7a0a0;
+}
+
+/* Image border colors per theme */
+body[data-theme="light"] .entry-image-thumb,
+body[data-theme="light"] #imagePreview {
+  border-color: #e1dfdd;
+}
+
+body[data-theme="sepia"] .entry-image-thumb,
+body[data-theme="sepia"] #imagePreview {
+  border-color: #d4c5a9;
+}
+
+body[data-theme="forest"] .entry-image-thumb,
+body[data-theme="forest"] #imagePreview {
+  border-color: #c5d5cb;
+}
+
+body[data-theme="midnight"] .entry-image-thumb,
+body[data-theme="midnight"] #imagePreview {
+  border-color: #2a2b45;
+}
+
+body[data-theme="red"] .entry-image-thumb,
+body[data-theme="red"] #imagePreview {
+  border-color: #4a2024;
+}
