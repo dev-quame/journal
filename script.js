@@ -12,9 +12,8 @@ let currentFilters = {
   endDate: null,
 };
 let versionHistory = {};
-let currentImageData = null; // For storing image during edit
+let currentImageData = null;
 
-// Load from localStorage
 function loadData() {
   const storedTemplates = localStorage.getItem("journal_templates");
   const storedEntries = localStorage.getItem("journal_entries");
@@ -28,6 +27,16 @@ function loadData() {
   entries = storedEntries ? JSON.parse(storedEntries) : [];
   defaultTemplateId = storedDefaultTemplate;
   versionHistory = storedVersionHistory ? JSON.parse(storedVersionHistory) : {};
+
+  // Migrate old entries (add createdAt and updatedAt)
+  entries = entries.map((entry) => {
+    if (!entry.createdAt) {
+      entry.createdAt = entry.timestamp || Date.now();
+      entry.updatedAt = entry.timestamp || Date.now();
+    }
+    return entry;
+  });
+  saveEntries();
 
   if (storedTheme) {
     document.body.setAttribute("data-theme", storedTheme);
@@ -81,7 +90,6 @@ function handleImageUpload(file) {
     const reader = new FileReader();
     reader.onload = (e) => {
       const dataUrl = e.target.result;
-      // Check size (max 500KB for performance)
       if (dataUrl.length > 600000) {
         alert("Image is too large. Please use an image under 500KB.");
         reject("Image too large");
@@ -404,7 +412,7 @@ function filterEntries() {
   const now = new Date();
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   filtered = filtered.filter((e) => {
-    const ed = new Date(e.timestamp);
+    const ed = new Date(e.createdAt);
     const eday = new Date(ed.getFullYear(), ed.getMonth(), ed.getDate());
     switch (currentFilters.dateRange) {
       case "7days": {
@@ -444,7 +452,7 @@ function renderEntries() {
   const sorted = [...filtered].sort((a, b) => {
     if (a.pinned && !b.pinned) return -1;
     if (!a.pinned && b.pinned) return 1;
-    return b.timestamp - a.timestamp;
+    return b.createdAt - a.createdAt;
   });
 
   if (sorted.length === 0) {
@@ -480,10 +488,14 @@ function renderEntries() {
       ? escapeHtml(entry.journalText).replace(/\n/g, "<br>")
       : "";
 
+    // Show "edited" badge if updatedAt is different from createdAt
+    const editedBadge =
+      entry.updatedAt && entry.updatedAt !== entry.createdAt ? " ✎" : "";
+
     card.innerHTML = `
             <div class="entry-header">
                 <span class="entry-template">${escapeHtml(templateName)}</span>
-                <span class="entry-date">${new Date(entry.timestamp).toLocaleString()}</span>
+                <span class="entry-date">${new Date(entry.createdAt).toLocaleString()}${editedBadge}</span>
             </div>
             ${fieldsHtml}
             ${imageHtml}
@@ -500,7 +512,6 @@ function renderEntries() {
     list.appendChild(card);
   });
 
-  // Image click → lightbox
   document.querySelectorAll(".entry-image-thumb").forEach((img) => {
     img.addEventListener("click", (e) => {
       e.stopPropagation();
@@ -508,14 +519,12 @@ function renderEntries() {
     });
   });
 
-  // Expand/collapse
   document.querySelectorAll(".entry-preview").forEach((preview) => {
     preview.addEventListener("click", function () {
       this.closest(".entry-card").classList.toggle("expanded");
     });
   });
 
-  // Pin
   document.querySelectorAll(".pin-btn").forEach((btn) => {
     btn.addEventListener("click", (e) => {
       e.stopPropagation();
@@ -528,7 +537,6 @@ function renderEntries() {
     });
   });
 
-  // Edit
   document.querySelectorAll(".edit-entry").forEach((btn) => {
     btn.addEventListener("click", (e) => {
       e.stopPropagation();
@@ -536,7 +544,6 @@ function renderEntries() {
     });
   });
 
-  // Delete
   document.querySelectorAll(".delete-entry").forEach((btn) => {
     btn.addEventListener("click", (e) => {
       e.stopPropagation();
@@ -724,7 +731,6 @@ async function saveEntryFromModal(event) {
   const journalText = document.getElementById("journalText").value;
   let image = currentImageData;
 
-  // Check if new image uploaded
   const fileInput = document.getElementById("entryImage");
   if (fileInput.files.length > 0) {
     try {
@@ -746,17 +752,19 @@ async function saveEntryFromModal(event) {
         fieldValues,
         journalText,
         image,
-        timestamp: Date.now(),
+        updatedAt: Date.now(),
       };
     }
   } else {
+    const now = Date.now();
     entries.push({
-      id: Date.now().toString(),
+      id: now.toString(),
       templateId,
       fieldValues,
       journalText,
       image,
-      timestamp: Date.now(),
+      createdAt: now,
+      updatedAt: now,
       pinned: false,
     });
   }
@@ -822,13 +830,15 @@ function saveQuickEntry(event) {
     );
     if (input && input.value.trim()) fieldValues[field.name] = input.value;
   }
+  const now = Date.now();
   entries.push({
-    id: Date.now().toString(),
+    id: now.toString(),
     templateId: defaultTemplateId,
     fieldValues,
     journalText: document.getElementById("quickJournalText").value,
     image: null,
-    timestamp: Date.now(),
+    createdAt: now,
+    updatedAt: now,
     pinned: false,
   });
   saveEntries();
@@ -1111,7 +1121,6 @@ document.addEventListener("DOMContentLoaded", () => {
         document.getElementById("backupBanner").style.display = "none";
       });
 
-    // Image upload
     document
       .getElementById("entryImage")
       ?.addEventListener("change", async (e) => {
@@ -1131,7 +1140,6 @@ document.addEventListener("DOMContentLoaded", () => {
       .getElementById("removeImageBtn")
       ?.addEventListener("click", clearImagePreview);
 
-    // Lightbox
     document
       .getElementById("lightboxClose")
       ?.addEventListener("click", closeLightbox);
