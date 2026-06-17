@@ -11,9 +11,8 @@ let currentFilters = {
   startDate: null,
   endDate: null,
 };
-
-// Version history storage: { entryId: { previousVersion: entryObject, timestamp: number } }
 let versionHistory = {};
+let currentImageData = null; // For storing image during edit
 
 // Load from localStorage
 function loadData() {
@@ -30,14 +29,12 @@ function loadData() {
   defaultTemplateId = storedDefaultTemplate;
   versionHistory = storedVersionHistory ? JSON.parse(storedVersionHistory) : {};
 
-  // Apply saved theme
   if (storedTheme) {
     document.body.setAttribute("data-theme", storedTheme);
     const themeSelect = document.getElementById("themeSelect");
     if (themeSelect) themeSelect.value = storedTheme;
   }
 
-  // If no templates exist, add a demo template
   if (templates.length === 0) {
     templates.push({
       id: "demo",
@@ -47,7 +44,6 @@ function loadData() {
     saveTemplates();
   }
 
-  // Validate default template still exists
   if (defaultTemplateId && !templates.find((t) => t.id === defaultTemplateId)) {
     defaultTemplateId = null;
     saveDefaultTemplate();
@@ -78,6 +74,56 @@ function saveVersionHistory() {
 }
 
 // ============================================
+// IMAGE HELPERS
+// ============================================
+function handleImageUpload(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const dataUrl = e.target.result;
+      // Check size (max 500KB for performance)
+      if (dataUrl.length > 600000) {
+        alert("Image is too large. Please use an image under 500KB.");
+        reject("Image too large");
+        return;
+      }
+      resolve(dataUrl);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+function renderImagePreview(dataUrl) {
+  const container = document.getElementById("imagePreviewContainer");
+  const preview = document.getElementById("imagePreview");
+  if (dataUrl) {
+    preview.src = dataUrl;
+    container.style.display = "block";
+  } else {
+    container.style.display = "none";
+    preview.src = "";
+  }
+}
+
+function clearImagePreview() {
+  currentImageData = null;
+  renderImagePreview(null);
+  document.getElementById("entryImage").value = "";
+}
+
+function openLightbox(imageSrc) {
+  const lightbox = document.getElementById("imageLightbox");
+  const lightboxImg = document.getElementById("lightboxImage");
+  lightboxImg.src = imageSrc;
+  lightbox.style.display = "block";
+}
+
+function closeLightbox() {
+  document.getElementById("imageLightbox").style.display = "none";
+}
+
+// ============================================
 // THEME MANAGEMENT
 // ============================================
 function initTheme() {
@@ -101,7 +147,6 @@ function updateBackupReminder() {
   const lastBackup = localStorage.getItem("journal_last_backup");
   const lastDismiss = localStorage.getItem("journal_backup_dismiss");
 
-  // If dismissed within last 7 days, don't show
   if (lastDismiss) {
     const dismissDate = new Date(parseInt(lastDismiss));
     const now = new Date();
@@ -124,7 +169,6 @@ function updateBackupReminder() {
       banner.style.display = "none";
     }
   } else {
-    // Never backed up
     document.getElementById("backupDaysText").textContent =
       "First time? Export a backup to keep your data safe.";
     banner.style.display = "flex";
@@ -161,7 +205,6 @@ function importAllData(file) {
   reader.onload = (e) => {
     try {
       const data = JSON.parse(e.target.result);
-
       if (data.templates) templates = data.templates;
       if (data.entries) entries = data.entries;
       if (data.defaultTemplateId) defaultTemplateId = data.defaultTemplateId;
@@ -172,14 +215,12 @@ function importAllData(file) {
       saveDefaultTemplate();
       saveVersionHistory();
 
-      // Refresh UI
       if (window.location.pathname.includes("settings.html")) {
         renderTemplates();
       } else {
         updateTemplateFilter();
         renderEntries();
       }
-
       alert("✅ Data imported successfully!");
     } catch (err) {
       alert("❌ Invalid backup file");
@@ -189,12 +230,7 @@ function importAllData(file) {
 }
 
 function exportTemplates() {
-  const data = {
-    version: "1.0",
-    exportDate: Date.now(),
-    templates: templates,
-  };
-
+  const data = { version: "1.0", exportDate: Date.now(), templates: templates };
   const blob = new Blob([JSON.stringify(data, null, 2)], {
     type: "application/json",
   });
@@ -211,14 +247,10 @@ function importTemplates(file) {
   reader.onload = (e) => {
     try {
       const data = JSON.parse(e.target.result);
-
       if (data.templates && Array.isArray(data.templates)) {
-        // Merge templates (avoid duplicates by checking name)
         for (const newTemplate of data.templates) {
           const exists = templates.find((t) => t.name === newTemplate.name);
-          if (!exists) {
-            templates.push(newTemplate);
-          }
+          if (!exists) templates.push(newTemplate);
         }
         saveTemplates();
         renderTemplates();
@@ -240,7 +272,6 @@ function importTemplates(file) {
 function initTourHint() {
   const hasSeenTour = localStorage.getItem("journal_tour_seen");
   const tourHint = document.getElementById("tourHint");
-
   if (
     !hasSeenTour &&
     tourHint &&
@@ -249,14 +280,10 @@ function initTourHint() {
   ) {
     tourHint.style.display = "block";
   }
-
-  const closeBtn = document.getElementById("closeTourHint");
-  if (closeBtn) {
-    closeBtn.addEventListener("click", () => {
-      tourHint.style.display = "none";
-      localStorage.setItem("journal_tour_seen", "true");
-    });
-  }
+  document.getElementById("closeTourHint")?.addEventListener("click", () => {
+    tourHint.style.display = "none";
+    localStorage.setItem("journal_tour_seen", "true");
+  });
 }
 
 // ============================================
@@ -264,39 +291,30 @@ function initTourHint() {
 // ============================================
 function initKeyboardShortcuts() {
   document.addEventListener("keydown", (e) => {
-    // N for new entry (not inside input/textarea)
-    if (e.key === "n" || e.key === "N") {
-      const activeElement = document.activeElement;
-      const isInputFocused =
-        activeElement.tagName === "INPUT" ||
-        activeElement.tagName === "TEXTAREA" ||
-        activeElement.tagName === "SELECT";
-      if (!isInputFocused) {
-        e.preventDefault();
-        openNewEntryModal();
-      }
+    if (
+      (e.key === "n" || e.key === "N") &&
+      !["INPUT", "TEXTAREA", "SELECT"].includes(document.activeElement.tagName)
+    ) {
+      e.preventDefault();
+      openNewEntryModal();
     }
-
-    // Escape to close modals
     if (e.key === "Escape") {
       closeModal();
       closeQuickModal();
+      closeLightbox();
     }
-
-    // Ctrl+S / Cmd+S to save
     if ((e.ctrlKey || e.metaKey) && e.key === "s") {
       e.preventDefault();
       const modal = document.getElementById("entryModal");
       if (modal && modal.style.display === "block") {
-        const form = document.getElementById("entryForm");
-        if (form) form.dispatchEvent(new Event("submit"));
+        document.getElementById("entryForm").dispatchEvent(new Event("submit"));
       }
     }
   });
 }
 
 // ============================================
-// VERSION HISTORY (Undo last edit)
+// VERSION HISTORY
 // ============================================
 function saveVersionBeforeEdit(entryId, entry) {
   versionHistory[entryId] = {
@@ -312,7 +330,6 @@ function undoVersion(entryId) {
     alert("No previous version to undo");
     return false;
   }
-
   const index = entries.findIndex((e) => e.id === entryId);
   if (index !== -1) {
     entries[index] = JSON.parse(JSON.stringify(version.previousVersion));
@@ -328,13 +345,10 @@ function showVersionHistoryUI(entryId) {
   const container = document.getElementById("versionHistoryContainer");
   const versionInfo = document.getElementById("versionInfo");
   const undoBtn = document.getElementById("undoVersionBtn");
-
   if (versionHistory[entryId]) {
     container.style.display = "block";
     const versionDate = new Date(versionHistory[entryId].timestamp);
     versionInfo.textContent = `Last edit: ${versionDate.toLocaleString()}`;
-
-    // Replace existing listener
     const newUndoBtn = undoBtn.cloneNode(true);
     undoBtn.parentNode.replaceChild(newUndoBtn, undoBtn);
     newUndoBtn.addEventListener("click", () => {
@@ -350,96 +364,81 @@ function showVersionHistoryUI(entryId) {
 }
 
 // ============================================
-// HELPER FUNCTIONS
+// HELPERS
 // ============================================
 function escapeHtml(str) {
   if (!str) return "";
-  return str.replace(/[&<>]/g, function (m) {
-    if (m === "&") return "&amp;";
-    if (m === "<") return "&lt;";
-    if (m === ">") return "&gt;";
-    return m;
-  });
+  return str.replace(
+    /[&<>]/g,
+    (m) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" })[m] || m,
+  );
 }
 
 function getPreviewText(text, maxLength = 100) {
   if (!text) return "";
-  if (text.length <= maxLength) return text;
-  return text.substring(0, maxLength).trim() + "...";
+  return text.length <= maxLength
+    ? text
+    : text.substring(0, maxLength).trim() + "...";
 }
 
 // ============================================
-// FILTER LOGIC
+// FILTER & RENDER
 // ============================================
 function filterEntries() {
   let filtered = [...entries];
-
   if (currentFilters.search) {
-    const searchLower = currentFilters.search.toLowerCase();
-    filtered = filtered.filter((entry) => {
-      if (
-        entry.journalText &&
-        entry.journalText.toLowerCase().includes(searchLower)
-      )
-        return true;
-      for (const value of Object.values(entry.fieldValues)) {
-        if (String(value).toLowerCase().includes(searchLower)) return true;
+    const s = currentFilters.search.toLowerCase();
+    filtered = filtered.filter((e) => {
+      if (e.journalText?.toLowerCase().includes(s)) return true;
+      for (const v of Object.values(e.fieldValues)) {
+        if (String(v).toLowerCase().includes(s)) return true;
       }
       return false;
     });
   }
-
   if (currentFilters.templateId !== "all") {
     filtered = filtered.filter(
-      (entry) => entry.templateId === currentFilters.templateId,
+      (e) => e.templateId === currentFilters.templateId,
     );
   }
-
   const now = new Date();
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-
-  filtered = filtered.filter((entry) => {
-    const entryDate = new Date(entry.timestamp);
-    const entryDay = new Date(
-      entryDate.getFullYear(),
-      entryDate.getMonth(),
-      entryDate.getDate(),
-    );
-
+  filtered = filtered.filter((e) => {
+    const ed = new Date(e.timestamp);
+    const eday = new Date(ed.getFullYear(), ed.getMonth(), ed.getDate());
     switch (currentFilters.dateRange) {
-      case "7days":
-        const sevenDaysAgo = new Date(today);
-        sevenDaysAgo.setDate(today.getDate() - 7);
-        return entryDay >= sevenDaysAgo;
-      case "30days":
-        const thirtyDaysAgo = new Date(today);
-        thirtyDaysAgo.setDate(today.getDate() - 30);
-        return entryDay >= thirtyDaysAgo;
+      case "7days": {
+        const d = new Date(today);
+        d.setDate(today.getDate() - 7);
+        return eday >= d;
+      }
+      case "30days": {
+        const d = new Date(today);
+        d.setDate(today.getDate() - 30);
+        return eday >= d;
+      }
       case "this-month":
         return (
-          entryDate.getMonth() === now.getMonth() &&
-          entryDate.getFullYear() === now.getFullYear()
+          ed.getMonth() === now.getMonth() &&
+          ed.getFullYear() === now.getFullYear()
         );
       case "custom":
-        if (currentFilters.startDate && currentFilters.endDate) {
+        if (currentFilters.startDate && currentFilters.endDate)
           return (
-            entryDay >= currentFilters.startDate &&
-            entryDay <= currentFilters.endDate
+            eday >= currentFilters.startDate && eday <= currentFilters.endDate
           );
-        }
         return true;
       default:
         return true;
     }
   });
-
   return filtered;
 }
 
 function renderEntries() {
-  const entriesList = document.getElementById("entriesList");
-  const emptyState = document.getElementById("emptyState");
-  if (!entriesList) return;
+  const list = document.getElementById("entriesList");
+  const empty = document.getElementById("emptyState");
+  if (!list) return;
 
   const filtered = filterEntries();
   const sorted = [...filtered].sort((a, b) => {
@@ -449,18 +448,16 @@ function renderEntries() {
   });
 
   if (sorted.length === 0) {
-    entriesList.innerHTML = "";
-    if (emptyState) emptyState.style.display = "block";
+    list.innerHTML = "";
+    if (empty) empty.style.display = "block";
     return;
   }
-
-  if (emptyState) emptyState.style.display = "none";
-  entriesList.innerHTML = "";
+  if (empty) empty.style.display = "none";
+  list.innerHTML = "";
 
   sorted.forEach((entry) => {
     const template = templates.find((t) => t.id === entry.templateId);
     const templateName = template ? template.name : "Unknown Template";
-
     const card = document.createElement("div");
     card.className = `entry-card ${entry.pinned ? "pinned" : ""}`;
     card.dataset.id = entry.id;
@@ -473,6 +470,11 @@ function renderEntries() {
     }
     fieldsHtml += "</div>";
 
+    let imageHtml = "";
+    if (entry.image) {
+      imageHtml = `<img src="${entry.image}" class="entry-image-thumb" data-full="${entry.image}" alt="Screenshot">`;
+    }
+
     const previewText = getPreviewText(entry.journalText || "");
     const fullText = entry.journalText
       ? escapeHtml(entry.journalText).replace(/\n/g, "<br>")
@@ -484,6 +486,7 @@ function renderEntries() {
                 <span class="entry-date">${new Date(entry.timestamp).toLocaleString()}</span>
             </div>
             ${fieldsHtml}
+            ${imageHtml}
             <div class="entry-preview">${escapeHtml(previewText)}</div>
             <div class="entry-full">
                 <div class="entry-journal">${fullText || "<em>No additional notes</em>"}</div>
@@ -494,22 +497,29 @@ function renderEntries() {
                 <button class="delete-entry" data-id="${entry.id}">🗑️ Delete</button>
             </div>
         `;
-
-    entriesList.appendChild(card);
+    list.appendChild(card);
   });
 
-  document.querySelectorAll(".entry-preview").forEach((preview) => {
-    preview.addEventListener("click", function () {
-      const card = this.closest(".entry-card");
-      if (card) card.classList.toggle("expanded");
+  // Image click → lightbox
+  document.querySelectorAll(".entry-image-thumb").forEach((img) => {
+    img.addEventListener("click", (e) => {
+      e.stopPropagation();
+      openLightbox(img.getAttribute("data-full"));
     });
   });
 
+  // Expand/collapse
+  document.querySelectorAll(".entry-preview").forEach((preview) => {
+    preview.addEventListener("click", function () {
+      this.closest(".entry-card").classList.toggle("expanded");
+    });
+  });
+
+  // Pin
   document.querySelectorAll(".pin-btn").forEach((btn) => {
     btn.addEventListener("click", (e) => {
       e.stopPropagation();
-      const id = btn.getAttribute("data-id");
-      const entry = entries.find((e) => e.id === id);
+      const entry = entries.find((e) => e.id === btn.getAttribute("data-id"));
       if (entry) {
         entry.pinned = !entry.pinned;
         saveEntries();
@@ -518,19 +528,20 @@ function renderEntries() {
     });
   });
 
+  // Edit
   document.querySelectorAll(".edit-entry").forEach((btn) => {
     btn.addEventListener("click", (e) => {
       e.stopPropagation();
-      const id = btn.getAttribute("data-id");
-      openEditModal(id);
+      openEditModal(btn.getAttribute("data-id"));
     });
   });
 
+  // Delete
   document.querySelectorAll(".delete-entry").forEach((btn) => {
     btn.addEventListener("click", (e) => {
       e.stopPropagation();
-      const id = btn.getAttribute("data-id");
       if (confirm("Delete this entry?")) {
+        const id = btn.getAttribute("data-id");
         entries = entries.filter((e) => e.id !== id);
         delete versionHistory[id];
         saveEntries();
@@ -543,7 +554,7 @@ function renderEntries() {
 }
 
 // ============================================
-// FILTER UI BINDINGS
+// FILTER UI
 // ============================================
 function bindFilters() {
   const searchInput = document.getElementById("searchInput");
@@ -555,140 +566,114 @@ function bindFilters() {
   const applyDateRange = document.getElementById("applyDateRange");
   const clearFiltersBtn = document.getElementById("clearFiltersBtn");
 
-  if (searchInput) {
-    searchInput.addEventListener("input", (e) => {
-      currentFilters.search = e.target.value;
+  searchInput?.addEventListener("input", (e) => {
+    currentFilters.search = e.target.value;
+    renderEntries();
+  });
+  templateFilter?.addEventListener("change", (e) => {
+    currentFilters.templateId = e.target.value;
+    renderEntries();
+  });
+  dateFilter?.addEventListener("change", (e) => {
+    currentFilters.dateRange = e.target.value;
+    customRange.style.display =
+      currentFilters.dateRange === "custom" ? "flex" : "none";
+    if (currentFilters.dateRange !== "custom") {
+      currentFilters.startDate = null;
+      currentFilters.endDate = null;
       renderEntries();
-    });
-  }
-
-  if (templateFilter) {
-    templateFilter.addEventListener("change", (e) => {
-      currentFilters.templateId = e.target.value;
+    }
+  });
+  applyDateRange?.addEventListener("click", () => {
+    if (startDate?.value && endDate?.value) {
+      currentFilters.startDate = new Date(startDate.value);
+      currentFilters.endDate = new Date(endDate.value);
+      currentFilters.endDate.setHours(23, 59, 59);
       renderEntries();
-    });
-  }
-
-  if (dateFilter) {
-    dateFilter.addEventListener("change", (e) => {
-      currentFilters.dateRange = e.target.value;
-      if (currentFilters.dateRange === "custom") {
-        if (customRange) customRange.style.display = "flex";
-      } else {
-        if (customRange) customRange.style.display = "none";
-        currentFilters.startDate = null;
-        currentFilters.endDate = null;
-        renderEntries();
-      }
-    });
-  }
-
-  if (applyDateRange) {
-    applyDateRange.addEventListener("click", () => {
-      if (startDate && startDate.value && endDate && endDate.value) {
-        currentFilters.startDate = new Date(startDate.value);
-        currentFilters.endDate = new Date(endDate.value);
-        currentFilters.endDate.setHours(23, 59, 59);
-        renderEntries();
-      } else {
-        alert("Please select both start and end dates");
-      }
-    });
-  }
-
-  if (clearFiltersBtn) {
-    clearFiltersBtn.addEventListener("click", () => {
-      if (searchInput) searchInput.value = "";
-      if (templateFilter) templateFilter.value = "all";
-      if (dateFilter) dateFilter.value = "all";
-      if (customRange) customRange.style.display = "none";
-      if (startDate) startDate.value = "";
-      if (endDate) endDate.value = "";
-
-      currentFilters = {
-        search: "",
-        templateId: "all",
-        dateRange: "all",
-        startDate: null,
-        endDate: null,
-      };
-      renderEntries();
-    });
-  }
+    } else alert("Please select both start and end dates");
+  });
+  clearFiltersBtn?.addEventListener("click", () => {
+    if (searchInput) searchInput.value = "";
+    if (templateFilter) templateFilter.value = "all";
+    if (dateFilter) dateFilter.value = "all";
+    customRange.style.display = "none";
+    if (startDate) startDate.value = "";
+    if (endDate) endDate.value = "";
+    currentFilters = {
+      search: "",
+      templateId: "all",
+      dateRange: "all",
+      startDate: null,
+      endDate: null,
+    };
+    renderEntries();
+  });
 }
 
 function updateTemplateFilter() {
-  const templateFilter = document.getElementById("templateFilter");
-  if (!templateFilter) return;
-
-  const currentValue = templateFilter.value;
-  templateFilter.innerHTML = '<option value="all">All templates</option>';
-
+  const tf = document.getElementById("templateFilter");
+  if (!tf) return;
+  const currentValue = tf.value;
+  tf.innerHTML = '<option value="all">All templates</option>';
   templates.forEach((t) => {
-    const option = document.createElement("option");
-    option.value = t.id;
-    option.textContent = `${t.name} (${entries.filter((e) => e.templateId === t.id).length})`;
-    if (currentValue === t.id) option.selected = true;
-    templateFilter.appendChild(option);
+    const opt = document.createElement("option");
+    opt.value = t.id;
+    opt.textContent = `${t.name} (${entries.filter((e) => e.templateId === t.id).length})`;
+    if (currentValue === t.id) opt.selected = true;
+    tf.appendChild(opt);
   });
 }
 
 // ============================================
-// MODAL LOGIC (Full Entry)
+// MODAL LOGIC
 // ============================================
 function openNewEntryModal() {
-  const modal = document.getElementById("entryModal");
-  const modalTitle = document.getElementById("modalTitle");
-  modalTitle.textContent = "New Entry";
+  document.getElementById("modalTitle").textContent = "New Entry";
   document.getElementById("entryForm").reset();
   document.getElementById("entryForm").removeAttribute("data-edit-id");
   document.getElementById("versionHistoryContainer").style.display = "none";
-
+  currentImageData = null;
+  renderImagePreview(null);
+  document.getElementById("entryImage").value = "";
   populateTemplateSelect();
   document.getElementById("dynamicFields").innerHTML = "";
   document.getElementById("journalText").value = "";
-
-  modal.style.display = "block";
+  document.getElementById("entryModal").style.display = "block";
 }
 
 function openEditModal(entryId) {
   const entry = entries.find((e) => e.id === entryId);
   if (!entry) return;
-
-  const modal = document.getElementById("entryModal");
-  const modalTitle = document.getElementById("modalTitle");
-  modalTitle.textContent = "Edit Entry";
+  document.getElementById("modalTitle").textContent = "Edit Entry";
   document.getElementById("entryForm").setAttribute("data-edit-id", entryId);
-
   populateTemplateSelect(entry.templateId);
   document.getElementById("journalText").value = entry.journalText || "";
+  currentImageData = entry.image || null;
+  renderImagePreview(currentImageData);
 
   const templateSelect = document.getElementById("templateSelect");
   templateSelect.value = entry.templateId;
   templateSelect.dispatchEvent(new Event("change"));
-
   setTimeout(() => {
     for (const [key, value] of Object.entries(entry.fieldValues)) {
       const input = document.querySelector(`[data-field-name="${key}"]`);
       if (input) input.value = value;
     }
   }, 50);
-
   showVersionHistoryUI(entryId);
-  modal.style.display = "block";
+  document.getElementById("entryModal").style.display = "block";
 }
 
 function populateTemplateSelect(selectedId = "") {
   const select = document.getElementById("templateSelect");
   select.innerHTML = '<option value="">-- Select a template --</option>';
   templates.forEach((t) => {
-    const option = document.createElement("option");
-    option.value = t.id;
-    option.textContent = t.name;
-    if (t.id === selectedId) option.selected = true;
-    select.appendChild(option);
+    const opt = document.createElement("option");
+    opt.value = t.id;
+    opt.textContent = t.name;
+    if (t.id === selectedId) opt.selected = true;
+    select.appendChild(opt);
   });
-
   select.dispatchEvent(new Event("change"));
 }
 
@@ -696,16 +681,12 @@ function onTemplateChange() {
   const templateId = document.getElementById("templateSelect").value;
   const container = document.getElementById("dynamicFields");
   container.innerHTML = "";
-
   if (!templateId) return;
-
   const template = templates.find((t) => t.id === templateId);
   if (!template) return;
-
   for (const field of template.fields) {
     const div = document.createElement("div");
     div.className = "form-group";
-
     let input;
     if (field.type === "textarea") {
       input = document.createElement("textarea");
@@ -714,29 +695,24 @@ function onTemplateChange() {
       input = document.createElement("input");
       input.type = field.type === "number" ? "number" : "text";
     }
-
     input.placeholder = field.name;
     input.setAttribute("data-field-name", field.name);
     if (field.required) input.required = true;
-
     const label = document.createElement("label");
     label.textContent = field.name + (field.required ? " *" : "");
-
     div.appendChild(label);
     div.appendChild(input);
     container.appendChild(div);
   }
 }
 
-function saveEntryFromModal(event) {
+async function saveEntryFromModal(event) {
   event.preventDefault();
-
   const editId = document
     .getElementById("entryForm")
     .getAttribute("data-edit-id");
   const templateId = document.getElementById("templateSelect").value;
   if (!templateId) return alert("Please select a template");
-
   const template = templates.find((t) => t.id === templateId);
   if (!template) return;
 
@@ -745,16 +721,23 @@ function saveEntryFromModal(event) {
     const input = document.querySelector(`[data-field-name="${field.name}"]`);
     if (input) fieldValues[field.name] = input.value;
   }
-
   const journalText = document.getElementById("journalText").value;
+  let image = currentImageData;
+
+  // Check if new image uploaded
+  const fileInput = document.getElementById("entryImage");
+  if (fileInput.files.length > 0) {
+    try {
+      image = await handleImageUpload(fileInput.files[0]);
+      currentImageData = image;
+    } catch (err) {
+      return;
+    }
+  }
 
   if (editId) {
-    // Save previous version before updating
-    const existingEntry = entries.find((e) => e.id === editId);
-    if (existingEntry) {
-      saveVersionBeforeEdit(editId, existingEntry);
-    }
-
+    const existing = entries.find((e) => e.id === editId);
+    if (existing) saveVersionBeforeEdit(editId, existing);
     const index = entries.findIndex((e) => e.id === editId);
     if (index !== -1) {
       entries[index] = {
@@ -762,6 +745,7 @@ function saveEntryFromModal(event) {
         templateId,
         fieldValues,
         journalText,
+        image,
         timestamp: Date.now(),
       };
     }
@@ -771,11 +755,11 @@ function saveEntryFromModal(event) {
       templateId,
       fieldValues,
       journalText,
+      image,
       timestamp: Date.now(),
       pinned: false,
     });
   }
-
   saveEntries();
   closeModal();
   updateTemplateFilter();
@@ -783,38 +767,26 @@ function saveEntryFromModal(event) {
 }
 
 function closeModal() {
-  const modal = document.getElementById("entryModal");
-  if (modal) modal.style.display = "none";
+  document.getElementById("entryModal").style.display = "none";
 }
 
 // ============================================
-// QUICK ENTRY LOGIC
+// QUICK ENTRY
 // ============================================
 function openQuickEntryModal() {
-  if (!defaultTemplateId) {
-    alert("Please set a default template in Settings first.");
-    return;
-  }
-
+  if (!defaultTemplateId)
+    return alert("Please set a default template in Settings first.");
   const template = templates.find((t) => t.id === defaultTemplateId);
-  if (!template) {
-    alert("Default template not found. Please set a new one in Settings.");
-    return;
-  }
-
-  const modal = document.getElementById("quickEntryModal");
-  const templateNameSpan = document.getElementById("quickTemplateName");
+  if (!template)
+    return alert(
+      "Default template not found. Please set a new one in Settings.",
+    );
+  document.getElementById("quickTemplateName").textContent = template.name;
   const dynamicFields = document.getElementById("quickDynamicFields");
-
-  if (templateNameSpan) templateNameSpan.textContent = template.name;
-
   dynamicFields.innerHTML = "";
-  const quickFields = template.fields.slice(0, 3);
-
-  for (const field of quickFields) {
+  for (const field of template.fields.slice(0, 3)) {
     const div = document.createElement("div");
     div.className = "form-group";
-
     let input;
     if (field.type === "textarea") {
       input = document.createElement("textarea");
@@ -823,55 +795,42 @@ function openQuickEntryModal() {
       input = document.createElement("input");
       input.type = field.type === "number" ? "number" : "text";
     }
-
     input.placeholder = field.name;
     input.setAttribute("data-quick-field-name", field.name);
-
     const label = document.createElement("label");
     label.textContent = field.name;
-
     div.appendChild(label);
     div.appendChild(input);
     dynamicFields.appendChild(div);
   }
-
   document.getElementById("quickJournalText").value = "";
-  modal.style.display = "block";
+  document.getElementById("quickEntryModal").style.display = "block";
 }
 
 function saveQuickEntry(event) {
   event.preventDefault();
-
   if (!defaultTemplateId) {
-    alert("No default template set.");
     closeQuickModal();
     return;
   }
-
   const template = templates.find((t) => t.id === defaultTemplateId);
   if (!template) return;
-
   const fieldValues = {};
   for (const field of template.fields.slice(0, 3)) {
     const input = document.querySelector(
       `[data-quick-field-name="${field.name}"]`,
     );
-    if (input && input.value.trim()) {
-      fieldValues[field.name] = input.value;
-    }
+    if (input && input.value.trim()) fieldValues[field.name] = input.value;
   }
-
-  const journalText = document.getElementById("quickJournalText").value;
-
   entries.push({
     id: Date.now().toString(),
     templateId: defaultTemplateId,
-    fieldValues: fieldValues,
-    journalText: journalText,
+    fieldValues,
+    journalText: document.getElementById("quickJournalText").value,
+    image: null,
     timestamp: Date.now(),
     pinned: false,
   });
-
   saveEntries();
   closeQuickModal();
   updateTemplateFilter();
@@ -879,8 +838,7 @@ function saveQuickEntry(event) {
 }
 
 function closeQuickModal() {
-  const modal = document.getElementById("quickEntryModal");
-  if (modal) modal.style.display = "none";
+  document.getElementById("quickEntryModal").style.display = "none";
 }
 
 function openFullFromQuick() {
@@ -889,31 +847,27 @@ function openFullFromQuick() {
 }
 
 // ============================================
-// SETTINGS PAGE LOGIC
+// SETTINGS PAGE
 // ============================================
 function renderTemplates() {
   const container = document.getElementById("templatesList");
   if (!container) return;
-
   if (templates.length === 0) {
     container.innerHTML =
       '<p>No templates yet. Click "Add Template" to create one.</p>';
     return;
   }
-
   container.innerHTML = "";
   templates.forEach((t) => {
     const card = document.createElement("div");
     card.className = "template-card";
-
     let fieldsHtml = '<ul style="margin-top: 0.5rem; margin-left: 1rem;">';
-    t.fields.forEach((f) => {
-      fieldsHtml += `<li>${escapeHtml(f.name)} (${f.type})${f.required ? " *" : ""}</li>`;
-    });
+    t.fields.forEach(
+      (f) =>
+        (fieldsHtml += `<li>${escapeHtml(f.name)} (${f.type})${f.required ? " *" : ""}</li>`),
+    );
     fieldsHtml += "</ul>";
-
     const isDefault = defaultTemplateId === t.id;
-
     card.innerHTML = `
             <div class="template-header">
                 <strong>${escapeHtml(t.name)} ${isDefault ? "⭐ (Default)" : ""}</strong>
@@ -927,7 +881,6 @@ function renderTemplates() {
         `;
     container.appendChild(card);
   });
-
   document.querySelectorAll(".set-default-template").forEach((btn) => {
     btn.addEventListener("click", () => {
       defaultTemplateId = btn.getAttribute("data-id");
@@ -935,13 +888,11 @@ function renderTemplates() {
       renderTemplates();
     });
   });
-
   document.querySelectorAll(".edit-template").forEach((btn) => {
     btn.addEventListener("click", () =>
       openTemplateModal(btn.getAttribute("data-id")),
     );
   });
-
   document.querySelectorAll(".delete-template").forEach((btn) => {
     btn.addEventListener("click", () => {
       if (
@@ -963,26 +914,20 @@ function renderTemplates() {
 }
 
 let currentEditTemplateId = null;
-
 function openTemplateModal(templateId = null) {
   currentEditTemplateId = templateId;
   const modal = document.getElementById("templateModal");
-  const title = document.getElementById("templateModalTitle");
-  const form = document.getElementById("templateForm");
-  form.reset();
-
+  document.getElementById("templateModalTitle").textContent = templateId
+    ? "Edit Template"
+    : "Add Template";
+  document.getElementById("templateForm").reset();
   if (templateId) {
-    title.textContent = "Edit Template";
     const template = templates.find((t) => t.id === templateId);
     if (template) {
       document.getElementById("templateName").value = template.name;
       renderFieldInputs(template.fields);
     }
-  } else {
-    title.textContent = "Add Template";
-    renderFieldInputs([]);
-  }
-
+  } else renderFieldInputs([]);
   modal.style.display = "block";
 }
 
@@ -1007,9 +952,8 @@ function renderFieldInputs(fields) {
         `;
     container.appendChild(div);
   });
-
   document.querySelectorAll(".remove-field").forEach((btn) => {
-    btn.addEventListener("click", (e) => {
+    btn.addEventListener("click", () => {
       const idx = parseInt(btn.getAttribute("data-index"));
       const currentFields = getFieldsFromUI();
       currentFields.splice(idx, 1);
@@ -1020,25 +964,26 @@ function renderFieldInputs(fields) {
 
 function getFieldsFromUI() {
   const fields = [];
-  const fieldDivs = document.querySelectorAll("#fieldsContainer .field-item");
-  fieldDivs.forEach((div, idx) => {
-    const nameInput = div.querySelector(
-      `input[data-field-name-index="${idx}"]`,
-    );
-    const typeSelect = div.querySelector(
-      `select[data-field-type-index="${idx}"]`,
-    );
-    const requiredCheck = div.querySelector(
-      `input[data-field-required-index="${idx}"]`,
-    );
-    if (nameInput && nameInput.value.trim()) {
-      fields.push({
-        name: nameInput.value.trim(),
-        type: typeSelect ? typeSelect.value : "text",
-        required: requiredCheck ? requiredCheck.checked : false,
-      });
-    }
-  });
+  document
+    .querySelectorAll("#fieldsContainer .field-item")
+    .forEach((div, idx) => {
+      const nameInput = div.querySelector(
+        `input[data-field-name-index="${idx}"]`,
+      );
+      const typeSelect = div.querySelector(
+        `select[data-field-type-index="${idx}"]`,
+      );
+      const requiredCheck = div.querySelector(
+        `input[data-field-required-index="${idx}"]`,
+      );
+      if (nameInput && nameInput.value.trim()) {
+        fields.push({
+          name: nameInput.value.trim(),
+          type: typeSelect ? typeSelect.value : "text",
+          required: requiredCheck ? requiredCheck.checked : false,
+        });
+      }
+    });
   return fields;
 }
 
@@ -1046,23 +991,12 @@ function saveTemplateFromModal(event) {
   event.preventDefault();
   const name = document.getElementById("templateName").value.trim();
   if (!name) return alert("Template name is required");
-
   const fields = getFieldsFromUI();
   if (fields.length === 0) return alert("At least one field is required");
-
   if (currentEditTemplateId) {
     const index = templates.findIndex((t) => t.id === currentEditTemplateId);
-    if (index !== -1) {
-      templates[index] = { ...templates[index], name, fields };
-    }
-  } else {
-    templates.push({
-      id: Date.now().toString(),
-      name,
-      fields,
-    });
-  }
-
+    if (index !== -1) templates[index] = { ...templates[index], name, fields };
+  } else templates.push({ id: Date.now().toString(), name, fields });
   saveTemplates();
   closeTemplateModal();
   renderTemplates();
@@ -1070,8 +1004,7 @@ function saveTemplateFromModal(event) {
 }
 
 function closeTemplateModal() {
-  const modal = document.getElementById("templateModal");
-  if (modal) modal.style.display = "none";
+  document.getElementById("templateModal").style.display = "none";
 }
 
 function clearAllData() {
@@ -1091,16 +1024,14 @@ function clearAllData() {
 }
 
 // ============================================
-// INITIALIZE BASED ON CURRENT PAGE
+// INITIALIZE
 // ============================================
 document.addEventListener("DOMContentLoaded", () => {
   loadData();
 
   if (window.location.pathname.includes("settings.html")) {
-    // Settings page
     renderTemplates();
     initTheme();
-
     document
       .getElementById("addTemplateBtn")
       ?.addEventListener("click", () => openTemplateModal());
@@ -1112,9 +1043,9 @@ document.addEventListener("DOMContentLoaded", () => {
       ?.addEventListener("click", exportTemplates);
     document
       .getElementById("importTemplatesBtn")
-      ?.addEventListener("click", () => {
-        document.getElementById("importTemplatesFile").click();
-      });
+      ?.addEventListener("click", () =>
+        document.getElementById("importTemplatesFile").click(),
+      );
     document
       .getElementById("importTemplatesFile")
       ?.addEventListener("change", (e) => {
@@ -1126,25 +1057,20 @@ document.addEventListener("DOMContentLoaded", () => {
       ?.addEventListener("click", exportAllData);
     document
       .getElementById("importAllDataBtn")
-      ?.addEventListener("click", () => {
-        document.getElementById("importAllDataFile").click();
-      });
+      ?.addEventListener("click", () =>
+        document.getElementById("importAllDataFile").click(),
+      );
     document
       .getElementById("importAllDataFile")
       ?.addEventListener("change", (e) => {
         if (e.target.files[0]) importAllData(e.target.files[0]);
         e.target.value = "";
       });
-
-    // Show last backup date
-    const lastBackup = localStorage.getItem("journal_last_backup");
-    if (lastBackup) {
-      const date = new Date(parseInt(lastBackup));
-      document.getElementById("lastBackupDate").textContent =
-        date.toLocaleDateString();
-    }
-
-    const templateModal = document.getElementById("templateModal");
+    const lb = localStorage.getItem("journal_last_backup");
+    if (lb)
+      document.getElementById("lastBackupDate").textContent = new Date(
+        parseInt(lb),
+      ).toLocaleDateString();
     document
       .querySelector("#templateModal .close")
       ?.addEventListener("click", closeTemplateModal);
@@ -1156,12 +1082,11 @@ document.addEventListener("DOMContentLoaded", () => {
       currentFields.push({ name: "", type: "text", required: false });
       renderFieldInputs(currentFields);
     });
-
     window.addEventListener("click", (e) => {
-      if (e.target === templateModal) closeTemplateModal();
+      if (e.target === document.getElementById("templateModal"))
+        closeTemplateModal();
     });
   } else {
-    // Index page
     updateTemplateFilter();
     renderEntries();
     bindFilters();
@@ -1169,9 +1094,6 @@ document.addEventListener("DOMContentLoaded", () => {
     initKeyboardShortcuts();
     initTourHint();
     updateBackupReminder();
-
-    const modal = document.getElementById("entryModal");
-    const quickModal = document.getElementById("quickEntryModal");
 
     document
       .getElementById("newEntryBtn")
@@ -1189,13 +1111,44 @@ document.addEventListener("DOMContentLoaded", () => {
         document.getElementById("backupBanner").style.display = "none";
       });
 
+    // Image upload
+    document
+      .getElementById("entryImage")
+      ?.addEventListener("change", async (e) => {
+        if (e.target.files.length > 0) {
+          try {
+            const dataUrl = await handleImageUpload(e.target.files[0]);
+            currentImageData = dataUrl;
+            renderImagePreview(dataUrl);
+          } catch (err) {
+            e.target.value = "";
+          }
+        } else {
+          clearImagePreview();
+        }
+      });
+    document
+      .getElementById("removeImageBtn")
+      ?.addEventListener("click", clearImagePreview);
+
+    // Lightbox
+    document
+      .getElementById("lightboxClose")
+      ?.addEventListener("click", closeLightbox);
+    document.getElementById("imageLightbox")?.addEventListener("click", (e) => {
+      if (e.target === document.getElementById("imageLightbox"))
+        closeLightbox();
+    });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") closeLightbox();
+    });
+
     document
       .querySelector("#entryModal .close")
       ?.addEventListener("click", closeModal);
     document
       .querySelector("#quickEntryModal .close")
       ?.addEventListener("click", closeQuickModal);
-
     document
       .getElementById("entryForm")
       ?.addEventListener("submit", saveEntryFromModal);
@@ -1205,14 +1158,14 @@ document.addEventListener("DOMContentLoaded", () => {
     document
       .getElementById("quickEntryFullEditBtn")
       ?.addEventListener("click", openFullFromQuick);
-
     document
       .getElementById("templateSelect")
       ?.addEventListener("change", onTemplateChange);
 
     window.addEventListener("click", (e) => {
-      if (e.target === modal) closeModal();
-      if (e.target === quickModal) closeQuickModal();
+      if (e.target === document.getElementById("entryModal")) closeModal();
+      if (e.target === document.getElementById("quickEntryModal"))
+        closeQuickModal();
     });
   }
 });
